@@ -333,6 +333,7 @@ for mct, etc.
 <compiler COMPILER="gnu">
   <!-- http://gcc.gnu.org/onlinedocs/gfortran/ -->
   <ADD_CPPDEFS> -DFORTRANUNDERSCORE -DNO_R16</ADD_CPPDEFS>
+  <CFLAGS> -O2 -std=gnu99 -march=native </CFLAGS>
   <ADD_CFLAGS compile_threaded="true"> -fopenmp </ADD_CFLAGS>
   <ADD_FFLAGS compile_threaded="true"> -fopenmp </ADD_FFLAGS>
   <ADD_LDFLAGS compile_threaded="true"> -fopenmp </ADD_LDFLAGS>
@@ -342,7 +343,7 @@ for mct, etc.
   <ADD_FFLAGS DEBUG="TRUE"> -g -Wall </ADD_FFLAGS>
   <!-- -ffree-line-length-none and -ffixed-line-length-none need to be in FFLAGS rather than in FIXEDFLAGS/FREEFLAGS 
        so that these are passed to cmake builds (cmake builds don't use FIXEDFLAGS and FREEFLAGS). -->
-  <FFLAGS> -O -fconvert=big-endian -ffree-line-length-none -ffixed-line-length-none </FFLAGS>
+  <FFLAGS> -O2 -fconvert=big-endian -ffree-line-length-none -ffixed-line-length-none -march=native </FFLAGS>
   <FFLAGS_NOOPT> -O0 </FFLAGS_NOOPT>
   <FC_AUTO_R8> -fdefault-real-8 </FC_AUTO_R8>
   <SFC> gfortran </SFC>

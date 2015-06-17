@@ -51,6 +51,10 @@ link_directories(${CMAKE_CURRENT_BINARY_DIR}/mct/mpeu)
 # Done MCT build
 # ------------------------------------------------------------------------
 
+# Benchmark command
+
+add_custom_target(benchmark)
+
 # Now a bunch of includes for share code.
 
 # csm_share (we don't build it here because it seems to be built differently
@@ -59,6 +63,10 @@ set(SHARE_ROOT "${CIME_ROOT}/share/csm_share")
 add_subdirectory(${SHARE_ROOT}/shr csm_share)
 include_directories(${SHARE_ROOT}/include)
 
+# shr_RandNum
+add_subdirectory(${CIME_ROOT}/share/shr_RandNum/src shr_RandNum)
+include_directories(${CIME_ROOT}/share/shr_RandNum/include)
+
 # esmf_wrf_timemgr not built here because it depends on csm_share.
 add_subdirectory(${CIME_ROOT}/share/esmf_wrf_timemgr esmf_wrf_timemgr)
 include_directories(${CIME_ROOT}/share/esmf_wrf_timemgr)
@@ -66,3 +74,5 @@ include_directories(${CIME_ROOT}/share/esmf_wrf_timemgr)
 # Now the actual test directories.
 add_subdirectory(driver_cpl/unit_test)
 add_subdirectory(share/csm_share/test/unit)
+add_subdirectory(share/shr_RandNum/test/bench)
+
