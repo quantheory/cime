@@ -1042,7 +1042,7 @@
 
 <machine MACH="titan">
          <DESC>ORNL XK6, os is CNL, 16 pes/node, batch system is PBS</DESC>
-	 <COMPILERS>pgi,pgicuda,intel,cray</COMPILERS>
+	 <COMPILERS>pgi,intel,cray</COMPILERS>
 	 <MPILIBS>mpich,mpi-serial</MPILIBS>
          <CESMSCRATCHROOT>$ENV{MEMBERWORK}/$PROJECT</CESMSCRATCHROOT>
          <RUNDIR>$CESMSCRATCHROOT/$CASE/run</RUNDIR>
@@ -1137,7 +1137,7 @@
 <machine MACH="pronghorn">
         <DESC>NCAR IBM, os is Linux, 16 pes/node, batch system is LSF</DESC>
         <OS>LINUX</OS>
-        <COMPILERS>intel,intelmic</COMPILERS>
+        <COMPILERS>intel</COMPILERS>
         <MPILIBS>impi,mpi-serial</MPILIBS>
         <RUNDIR>/glade/scratch/$CCSMUSER/$CASE/run</RUNDIR>
         <EXEROOT>/glade/scratch/$CCSMUSER/$CASE/bld</EXEROOT>

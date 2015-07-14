@@ -46,25 +46,6 @@ if ( $COMPILER == "intel" ) then
 setenv PRONGHORN_NETCDF_PATH /glade/p/work/srinathv/pronghorn-sw/netcdf/4.2.1.1/intel/14.0.0/snb
 endif
 
-if ( $COMPILER == "intelmic" ) then
-#  module load intel/13.1.1.163
-#  module load mkl/13.0.2.146
-# Currently trilinos is only supported with the INTEL compiler
-#  module load trilinos/11.0.3
-# Currently esmf is only supported with the INTEL compiler
-  #module load esmf
-#  if ( $MPILIB == "mvapich2") then
-#    module load mvapich2/1.9a2
-#  endif
-#  if ( $MPILIB == "impi") then
-#	module swap mvapich2 impi
-#  endif
-#module load netcdf/4.2.1.1
-#setenv TACC_NETCDF_DIR /work/02463/srinathv/netcdf/mic
-#module load parallel-netcdf/4.2.1.1
-setenv PRONGHORN_NETCDF_PATH /glade/p/work/srinathv/pronghorn-sw/netcdf/4.2.1.1/intel/14.0.0/mic
-endif
-
 #transfer netcdf from stampdede var to cesm var
 setenv NETCDF_PATH $PRONGHORN_NETCDF_PATH 
 module load cmake

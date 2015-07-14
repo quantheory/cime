@@ -30,10 +30,6 @@ include $(MACFILE)
 
 INCLDIR += -I$(GPTL_DIR)
 
-ifdef GPTL_CPPDEFS
-  CPPDEFS += $(GPTL_CPPDEFS)
-endif
-
 ifeq ($(strip $(MPILIB)), mpi-serial)
   CC      := $(SCC)
   FC      := $(SFC)

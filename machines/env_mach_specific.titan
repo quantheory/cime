@@ -40,19 +40,6 @@ if (-e /opt/modules/default/init/csh) then
   module rm cray-netcdf-hdf5parallel
   module rm cray-parallel-netcdf
   
-  if ($COMPILER == "pgicuda") then
-    module load PrgEnv-pgi
-    module switch pgi       pgi/14.2.0 
-    module load cray-mpich/7.0.4
-    module load cray-libsci/13.0.1
-    module load esmf/5.2.0rp2
-    module switch atp atp/1.7.5
-    # NOTE(wjs, 2015-03-12) The following line is needed for bit-for-bit reproducibility
-    setenv CRAY_CPU_TARGET istanbul
-    module add cudatoolkit
-    setenv CRAY_CUDA_PROXY 1
-  endif  
-  
   if ( $COMPILER == "pgi" ) then
       module load PrgEnv-pgi
       module switch pgi       pgi/14.2.0 

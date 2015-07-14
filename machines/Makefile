@@ -74,16 +74,13 @@ ifndef MOD_SUFFIX
    MOD_SUFFIX := mod
 endif
 
+include $(CASEROOT)/Macros
+
 #===============================================================================
-# set CPP options (must use this before any flags or cflags settings)
+# set CPP options
 #===============================================================================
 
-CPPDEFS := $(USER_CPPDEFS) -D$(OS) 
-
-# Unless DEBUG mode is enabled, use NDEBUG to turn off assert statements.
-ifneq ($(strip $(DEBUG)),TRUE)
-   CPPDEFS += -DNDEBUG
-endif
+CPPDEFS := $(CPPDEFS) $(USER_CPPDEFS)
 
 # USE_ESMF_LIB is currently only defined in env_build.xml
 ifeq ($(USE_ESMF_LIB), TRUE)
@@ -102,11 +99,7 @@ ifeq ($(strip $(MPILIB)),mpi-serial)
 else
   CPPDEFS += -DHAVE_MPI
 endif
-ifeq ($(compile_threaded), true)
-  CPPDEFS += -DTHREADED_OMP
-endif
 
-include $(CASEROOT)/Macros
 # Decide whether to use a C++ or Fortran linker, based on whether we
 # are using any C++ code and the compiler-dependent CXX_LINKER variable
 ifeq ($(USE_CXX), true)
