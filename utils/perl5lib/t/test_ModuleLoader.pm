@@ -2422,199 +2422,199 @@ sub test_new() : Test(1)
 ###
 ###
 ##
-sub test_moduleInit_titan() : Test(2)
-{
-    my $self = shift;
-    my $moduleloaderys = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich2',
-                                                   debug => "FALSE", cimeroot => "../../", caseroot => ".");
+# sub test_moduleInit_titan() : Test(2)
+# {
+#     my $self = shift;
+#     my $moduleloaderys = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich2',
+#                                                    debug => "FALSE", cimeroot => "../../", caseroot => ".");
 
-    $moduleloaderys->moduleInit();
+#     $moduleloaderys->moduleInit();
 
-    ok($moduleloaderys->{initpath} eq '/opt/modules/default/init/perl') || diag($moduleloaderys->{initpath});
-    ok($moduleloaderys->{cmdpath} eq '/opt/modules/default/bin/modulecmd perl') || diag($moduleloaderys->{cmdpath});
-}
+#     ok($moduleloaderys->{initpath} eq '/opt/modules/default/init/perl') || diag($moduleloaderys->{initpath});
+#     ok($moduleloaderys->{cmdpath} eq '/opt/modules/default/bin/modulecmd perl') || diag($moduleloaderys->{cmdpath});
+# }
 
-sub test_findModulesFromMachinesDir_titan() : Test(1):
-{
-    my $self = shift;
-    my @expectedmodules = (
-                                 { action => 'rm', actupon => 'PrgEnv-intel' , seqnum => 1},
-                                 { action => 'rm', actupon => 'PrgEnv-pgi' , seqnum => 2},
-                                 { action => 'rm', actupon => 'PrgEnv-cray' , seqnum => 3},
-                                 { action => 'rm', actupon => 'PrgEnv-gnu' , seqnum => 4},
-                                 { action => 'rm', actupon => 'PrgEnv-pathscale' , seqnum => 5},
-                                 { action => 'rm', actupon => 'intel' , seqnum => 6},
-                                 { action => 'rm', actupon => 'pgi' , seqnum => 7},
-                                 { action => 'rm', actupon => 'cray' , seqnum => 8},
-                                 { action => 'rm', actupon => 'pathscale' , seqnum => 9},
-                                 { action => 'rm', actupon => 'parallel-netcdf' , seqnum => 10},
-                                 { action => 'rm', actupon => 'netcdf' , seqnum => 11},
-                                 { action => 'rm', actupon => 'cmake' , seqnum => 12},
-                                 { action => 'rm', actupon => 'cray-mpich' , seqnum => 13},
-                                 { action => 'rm', actupon => 'cray-mpich2' , seqnum => 14},
-                                 { action => 'rm', actupon => 'cray-libsci' , seqnum => 15},
-                                 { action => 'rm', actupon => 'xt-libsci' , seqnum => 16},
-                                 { action => 'rm', actupon => 'cray-netcdf' , seqnum => 17},
-                                 { action => 'rm', actupon => 'cray-netcdf-hdf5parallel' , seqnum => 18},
-                                 { action => 'rm', actupon => 'cray-parallel-netcdf' , seqnum => 19},
-                                 { action => 'load', actupon => 'PrgEnv-pgi' , seqnum => 20},
-                                 { action => 'switch', actupon => 'pgi pgi/14.2.0' , seqnum => 21},
-                                 { action => 'load', actupon => 'cray-mpich/7.0.4' , seqnum => 22},
-                                 { action => 'load', actupon => 'cray-libsci/13.0.1' , seqnum => 23},
-                                 { action => 'load', actupon => 'esmf/5.2.0rp2' , seqnum => 24},
-                                 { action => 'load', actupon => 'cray-netcdf-hdf5parallel/4.3.2' , seqnum => 25},
-                                 { action => 'load', actupon => 'cray-parallel-netcdf/1.5.0' , seqnum => 26},
-                                 { action => 'load', actupon => 'subversion' , seqnum => 27},
-                                 { action => 'load', actupon => 'cmake/2.8.11.2' , seqnum => 28},
-                          );
-    my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
-                                                       debug => "FALSE", cimeroot => "../../", caseroot => '.');
-    $moduleloader->moduleInit();
-    my @actualmodules = $moduleloader->findModulesFromMachinesDir();
-    #print "titan actualmodules\n";
-    #print Dumper \@actualmodules;
-    is_deeply(\@actualmodules, \@expectedmodules);
-}
+# sub test_findModulesFromMachinesDir_titan() : Test(1):
+# {
+#     my $self = shift;
+#     my @expectedmodules = (
+#                                  { action => 'rm', actupon => 'PrgEnv-intel' , seqnum => 1},
+#                                  { action => 'rm', actupon => 'PrgEnv-pgi' , seqnum => 2},
+#                                  { action => 'rm', actupon => 'PrgEnv-cray' , seqnum => 3},
+#                                  { action => 'rm', actupon => 'PrgEnv-gnu' , seqnum => 4},
+#                                  { action => 'rm', actupon => 'PrgEnv-pathscale' , seqnum => 5},
+#                                  { action => 'rm', actupon => 'intel' , seqnum => 6},
+#                                  { action => 'rm', actupon => 'pgi' , seqnum => 7},
+#                                  { action => 'rm', actupon => 'cray' , seqnum => 8},
+#                                  { action => 'rm', actupon => 'pathscale' , seqnum => 9},
+#                                  { action => 'rm', actupon => 'parallel-netcdf' , seqnum => 10},
+#                                  { action => 'rm', actupon => 'netcdf' , seqnum => 11},
+#                                  { action => 'rm', actupon => 'cmake' , seqnum => 12},
+#                                  { action => 'rm', actupon => 'cray-mpich' , seqnum => 13},
+#                                  { action => 'rm', actupon => 'cray-mpich2' , seqnum => 14},
+#                                  { action => 'rm', actupon => 'cray-libsci' , seqnum => 15},
+#                                  { action => 'rm', actupon => 'xt-libsci' , seqnum => 16},
+#                                  { action => 'rm', actupon => 'cray-netcdf' , seqnum => 17},
+#                                  { action => 'rm', actupon => 'cray-netcdf-hdf5parallel' , seqnum => 18},
+#                                  { action => 'rm', actupon => 'cray-parallel-netcdf' , seqnum => 19},
+#                                  { action => 'load', actupon => 'PrgEnv-pgi' , seqnum => 20},
+#                                  { action => 'switch', actupon => 'pgi pgi/14.2.0' , seqnum => 21},
+#                                  { action => 'load', actupon => 'cray-mpich/7.0.4' , seqnum => 22},
+#                                  { action => 'load', actupon => 'cray-libsci/13.0.1' , seqnum => 23},
+#                                  { action => 'load', actupon => 'esmf/5.2.0rp2' , seqnum => 24},
+#                                  { action => 'load', actupon => 'cray-netcdf-hdf5parallel/4.3.2' , seqnum => 25},
+#                                  { action => 'load', actupon => 'cray-parallel-netcdf/1.5.0' , seqnum => 26},
+#                                  { action => 'load', actupon => 'subversion' , seqnum => 27},
+#                                  { action => 'load', actupon => 'cmake/2.8.11.2' , seqnum => 28},
+#                           );
+#     my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
+#                                                        debug => "FALSE", cimeroot => "../../", caseroot => '.');
+#     $moduleloader->moduleInit();
+#     my @actualmodules = $moduleloader->findModulesFromMachinesDir();
+#     #print "titan actualmodules\n";
+#     #print Dumper \@actualmodules;
+#     is_deeply(\@actualmodules, \@expectedmodules);
+# }
 
-sub test_findModulesForCase_titan() : Test(1):
-{
-    my $self = shift;
+# sub test_findModulesForCase_titan() : Test(1):
+# {
+#     my $self = shift;
 
-    my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
-                                                       debug => "FALSE", cimeroot => "../../", caseroot => '.');
-    my @expectedmodules = (
-                                 { action => 'rm', actupon => 'PrgEnv-intel' , seqnum => 1},
-                                 { action => 'rm', actupon => 'PrgEnv-pgi' , seqnum => 2},
-                                 { action => 'rm', actupon => 'PrgEnv-cray' , seqnum => 3},
-                                 { action => 'rm', actupon => 'PrgEnv-gnu' , seqnum => 4},
-                                 { action => 'rm', actupon => 'PrgEnv-pathscale' , seqnum => 5},
-                                 { action => 'rm', actupon => 'intel' , seqnum => 6},
-                                 { action => 'rm', actupon => 'pgi' , seqnum => 7},
-                                 { action => 'rm', actupon => 'cray' , seqnum => 8},
-                                 { action => 'rm', actupon => 'pathscale' , seqnum => 9},
-                                 { action => 'rm', actupon => 'parallel-netcdf' , seqnum => 10},
-                                 { action => 'rm', actupon => 'netcdf' , seqnum => 11},
-                                 { action => 'rm', actupon => 'cmake' , seqnum => 12},
-                                 { action => 'rm', actupon => 'cray-mpich' , seqnum => 13},
-                                 { action => 'rm', actupon => 'cray-mpich2' , seqnum => 14},
-                                 { action => 'rm', actupon => 'cray-libsci' , seqnum => 15},
-                                 { action => 'rm', actupon => 'xt-libsci' , seqnum => 16},
-                                 { action => 'rm', actupon => 'cray-netcdf' , seqnum => 17},
-                                 { action => 'rm', actupon => 'cray-netcdf-hdf5parallel' , seqnum => 18},
-                                 { action => 'rm', actupon => 'cray-parallel-netcdf' , seqnum => 19},
-                                 { action => 'load', actupon => 'PrgEnv-pgi' , seqnum => 20},
-                                 { action => 'switch', actupon => 'pgi pgi/14.2.0' , seqnum => 21},
-                                 { action => 'load', actupon => 'cray-mpich/7.0.4' , seqnum => 22},
-                                 { action => 'load', actupon => 'cray-libsci/13.0.1' , seqnum => 23},
-                                 { action => 'load', actupon => 'esmf/5.2.0rp2' , seqnum => 24},
-                                 { action => 'load', actupon => 'cray-netcdf-hdf5parallel/4.3.2' , seqnum => 25},
-                                 { action => 'load', actupon => 'cray-parallel-netcdf/1.5.0' , seqnum => 26},
-                                 { action => 'load', actupon => 'subversion' , seqnum => 27},
-                                 { action => 'load', actupon => 'cmake/2.8.11.2' , seqnum => 28},
-                          );
+#     my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
+#                                                        debug => "FALSE", cimeroot => "../../", caseroot => '.');
+#     my @expectedmodules = (
+#                                  { action => 'rm', actupon => 'PrgEnv-intel' , seqnum => 1},
+#                                  { action => 'rm', actupon => 'PrgEnv-pgi' , seqnum => 2},
+#                                  { action => 'rm', actupon => 'PrgEnv-cray' , seqnum => 3},
+#                                  { action => 'rm', actupon => 'PrgEnv-gnu' , seqnum => 4},
+#                                  { action => 'rm', actupon => 'PrgEnv-pathscale' , seqnum => 5},
+#                                  { action => 'rm', actupon => 'intel' , seqnum => 6},
+#                                  { action => 'rm', actupon => 'pgi' , seqnum => 7},
+#                                  { action => 'rm', actupon => 'cray' , seqnum => 8},
+#                                  { action => 'rm', actupon => 'pathscale' , seqnum => 9},
+#                                  { action => 'rm', actupon => 'parallel-netcdf' , seqnum => 10},
+#                                  { action => 'rm', actupon => 'netcdf' , seqnum => 11},
+#                                  { action => 'rm', actupon => 'cmake' , seqnum => 12},
+#                                  { action => 'rm', actupon => 'cray-mpich' , seqnum => 13},
+#                                  { action => 'rm', actupon => 'cray-mpich2' , seqnum => 14},
+#                                  { action => 'rm', actupon => 'cray-libsci' , seqnum => 15},
+#                                  { action => 'rm', actupon => 'xt-libsci' , seqnum => 16},
+#                                  { action => 'rm', actupon => 'cray-netcdf' , seqnum => 17},
+#                                  { action => 'rm', actupon => 'cray-netcdf-hdf5parallel' , seqnum => 18},
+#                                  { action => 'rm', actupon => 'cray-parallel-netcdf' , seqnum => 19},
+#                                  { action => 'load', actupon => 'PrgEnv-pgi' , seqnum => 20},
+#                                  { action => 'switch', actupon => 'pgi pgi/14.2.0' , seqnum => 21},
+#                                  { action => 'load', actupon => 'cray-mpich/7.0.4' , seqnum => 22},
+#                                  { action => 'load', actupon => 'cray-libsci/13.0.1' , seqnum => 23},
+#                                  { action => 'load', actupon => 'esmf/5.2.0rp2' , seqnum => 24},
+#                                  { action => 'load', actupon => 'cray-netcdf-hdf5parallel/4.3.2' , seqnum => 25},
+#                                  { action => 'load', actupon => 'cray-parallel-netcdf/1.5.0' , seqnum => 26},
+#                                  { action => 'load', actupon => 'subversion' , seqnum => 27},
+#                                  { action => 'load', actupon => 'cmake/2.8.11.2' , seqnum => 28},
+#                           );
 
-    $moduleloader->moduleInit();
-    $moduleloader->writeXMLFileForCase();
-    my @actualmodules = $moduleloader->findModulesForCase();
-
-
-    #print Dumper \@expectedintelmpichmodules;
-    #    #print Dumper \@actualintelmpichmodules;
-    is_deeply(\@actualmodules, \@expectedmodules);
- }
-
-sub test_writeXMLFileForCase_titan() : Test(1):
-{
-    my $self = shift;
-    my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
-                                                       debug => "FALSE", cimeroot => "../../", caseroot => '.');
-    $moduleloader->moduleInit();
-    $moduleloader->writeXMLFileForCase();
-
-    my $expectedfile = "./t/mocks_ModuleLoader/mach_specific.titan.xml";
-    open(my $EXPECTED, "<", $expectedfile) or die "could not open $expectedfile";
-    binmode $EXPECTED;
-    my $expected = do { local $/; <$EXPECTED> };
-    close $EXPECTED;
-
-    my $actualfile = "./env_mach_specific.xml";
-    open(my $ACTUAL, "<", $actualfile) or die "could not open $actualfile";
-    binmode $ACTUAL;
-    my $actual = do { local $/; <$ACTUAL> } ;
-    close $actual;
-    cmp_ok($actual,  'eq',  $expected);
-    #unlink $actualfile;
-}
-
-sub test_writeCshModuleFile_titan() : Test(1):
-{
-    my $self = shift;
+#     $moduleloader->moduleInit();
+#     $moduleloader->writeXMLFileForCase();
+#     my @actualmodules = $moduleloader->findModulesForCase();
 
 
-    my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
-                                                       debug => "FALSE", cimeroot => "../../", caseroot => '.');
-    $moduleloader->moduleInit();
-    $moduleloader->writeXMLFileForCase();
-    $moduleloader->findModulesForCase();
-    $moduleloader->writeCshModuleFile();
+#     #print Dumper \@expectedintelmpichmodules;
+#     #    #print Dumper \@actualintelmpichmodules;
+#     is_deeply(\@actualmodules, \@expectedmodules);
+#  }
 
-    my $expectedfile = "./t/mocks_ModuleLoader/env_mach_specific.titan.csh";
-    open(my $EXPECTED, "<", $expectedfile) or die "could not open $expectedfile";
-    my $expected = do { local $/; <$EXPECTED> };
-    close $EXPECTED;
+# sub test_writeXMLFileForCase_titan() : Test(1):
+# {
+#     my $self = shift;
+#     my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
+#                                                        debug => "FALSE", cimeroot => "../../", caseroot => '.');
+#     $moduleloader->moduleInit();
+#     $moduleloader->writeXMLFileForCase();
 
-    my $actualfile = "./.env_mach_specific.csh";
-    open(my $ACTUAL, "<", $actualfile) or die "could not open $actualfile";
-    my $actual = do { local $/; <$ACTUAL> };
-    close $ACTUAL;
-    ok($actual eq $expected);
-    #unlink $actualfile;
-}
+#     my $expectedfile = "./t/mocks_ModuleLoader/mach_specific.titan.xml";
+#     open(my $EXPECTED, "<", $expectedfile) or die "could not open $expectedfile";
+#     binmode $EXPECTED;
+#     my $expected = do { local $/; <$EXPECTED> };
+#     close $EXPECTED;
 
-sub test_writeShModuleFile_titan() : Test(1):
-{
-    my $self = shift;
+#     my $actualfile = "./env_mach_specific.xml";
+#     open(my $ACTUAL, "<", $actualfile) or die "could not open $actualfile";
+#     binmode $ACTUAL;
+#     my $actual = do { local $/; <$ACTUAL> } ;
+#     close $actual;
+#     cmp_ok($actual,  'eq',  $expected);
+#     #unlink $actualfile;
+# }
+
+# sub test_writeCshModuleFile_titan() : Test(1):
+# {
+#     my $self = shift;
 
 
-    my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
-                                                       debug => "FALSE", cimeroot => "../../", caseroot => '.');
-    $moduleloader->moduleInit();
-    $moduleloader->writeXMLFileForCase();
-    $moduleloader->findModulesForCase();
-    $moduleloader->writeShModuleFile();
+#     my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
+#                                                        debug => "FALSE", cimeroot => "../../", caseroot => '.');
+#     $moduleloader->moduleInit();
+#     $moduleloader->writeXMLFileForCase();
+#     $moduleloader->findModulesForCase();
+#     $moduleloader->writeCshModuleFile();
 
-    my $expectedfile = "./t/mocks_ModuleLoader/env_mach_specific.titan.sh";
-    open(my $EXPECTED, "<", $expectedfile) or die "could not open $expectedfile";
-    my $expected = do { local $/; <$EXPECTED> };
-    close $EXPECTED;
+#     my $expectedfile = "./t/mocks_ModuleLoader/env_mach_specific.titan.csh";
+#     open(my $EXPECTED, "<", $expectedfile) or die "could not open $expectedfile";
+#     my $expected = do { local $/; <$EXPECTED> };
+#     close $EXPECTED;
 
-    my $actualfile = "./.env_mach_specific.sh";
-    open(my $ACTUAL, "<", $actualfile) or die "could not open $actualfile";
-    my $actual = do { local $/; <$ACTUAL> };
-    close $ACTUAL;
-    ok($actual eq $expected);
-    #unlink $actualfile;
-}
-sub test_findEnvVars_titan() : Test(1):
-{
-    my $self = shift;
-    my $moduleloader = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
-                                                       debug => "FALSE", cimeroot => "../../", caseroot => '.');
+#     my $actualfile = "./.env_mach_specific.csh";
+#     open(my $ACTUAL, "<", $actualfile) or die "could not open $actualfile";
+#     my $actual = do { local $/; <$ACTUAL> };
+#     close $ACTUAL;
+#     ok($actual eq $expected);
+#     #unlink $actualfile;
+# }
+
+# sub test_writeShModuleFile_titan() : Test(1):
+# {
+#     my $self = shift;
+
+
+#     my $moduleloader  = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
+#                                                        debug => "FALSE", cimeroot => "../../", caseroot => '.');
+#     $moduleloader->moduleInit();
+#     $moduleloader->writeXMLFileForCase();
+#     $moduleloader->findModulesForCase();
+#     $moduleloader->writeShModuleFile();
+
+#     my $expectedfile = "./t/mocks_ModuleLoader/env_mach_specific.titan.sh";
+#     open(my $EXPECTED, "<", $expectedfile) or die "could not open $expectedfile";
+#     my $expected = do { local $/; <$EXPECTED> };
+#     close $EXPECTED;
+
+#     my $actualfile = "./.env_mach_specific.sh";
+#     open(my $ACTUAL, "<", $actualfile) or die "could not open $actualfile";
+#     my $actual = do { local $/; <$ACTUAL> };
+#     close $ACTUAL;
+#     ok($actual eq $expected);
+#     #unlink $actualfile;
+# }
+# sub test_findEnvVars_titan() : Test(1):
+# {
+#     my $self = shift;
+#     my $moduleloader = Module::ModuleLoader->new(machine => 'titan', compiler => 'pgi', mpilib => 'mpich',
+#                                                        debug => "FALSE", cimeroot => "../../", caseroot => '.');
     
-    $moduleloader->moduleInit();
-    $moduleloader->writeXMLFileForCase();
-    $moduleloader->findModulesForCase();
-    my %actualenvs = $moduleloader->findEnvVars();
-    my $expectedenvs = {
-          'MPSTKZ' => '64M',
-          'MPICH_CPUMASK_DPSPLAY' => '1',
-          'MPICH_ENV_DISPLAY' => '1',
-          'MPICH_RANK_REORDER_DISPLAY' => '1',
-          'OMP_STACKSIZE' => '64M',
-          'MPICH_VERSION_DISPLAY' => '1',
-          'CRAY_CPU_TARGET' => 'istanbul',
-        };
-    is_deeply(\%actualenvs, $expectedenvs);
-}
+#     $moduleloader->moduleInit();
+#     $moduleloader->writeXMLFileForCase();
+#     $moduleloader->findModulesForCase();
+#     my %actualenvs = $moduleloader->findEnvVars();
+#     my $expectedenvs = {
+#           'MPSTKZ' => '64M',
+#           'MPICH_CPUMASK_DPSPLAY' => '1',
+#           'MPICH_ENV_DISPLAY' => '1',
+#           'MPICH_RANK_REORDER_DISPLAY' => '1',
+#           'OMP_STACKSIZE' => '64M',
+#           'MPICH_VERSION_DISPLAY' => '1',
+#           'CRAY_CPU_TARGET' => 'istanbul',
+#         };
+#     is_deeply(\%actualenvs, $expectedenvs);
+# }
 1;
 	

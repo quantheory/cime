@@ -2,7 +2,7 @@ package test_TaskMaker;
 
 use Data::Dumper;
 use Test::More;
-use Test::Exception:
+use Test::Exception;
 
 use parent qw(Test::Class);
 
@@ -14,3 +14,4 @@ sub teardown : Test(setup => 0) {
 	my $self = shift;
 }
 
+1;

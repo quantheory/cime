@@ -39,7 +39,7 @@ require Build::NamelistDefinition;
 require Build::NamelistDefaults;
 require Build::Namelist;
 require Streams::TemplateGeneric;
-require Tools::SetupTools;
+require Config::SetupTools;
 
 # local perl modules
 use Test::Class;
