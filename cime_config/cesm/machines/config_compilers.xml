@@ -473,7 +473,6 @@ for mct, etc.
 
 <compiler COMPILER="gnu" MACH="yellowstone">
   <LAPACK_LIBDIR> /glade/apps/opt/lib </LAPACK_LIBDIR>
-  <PIO_TYPENAME>netcdf</PIO_TYPENAME>
 </compiler>
 
 
@@ -575,7 +574,7 @@ for mct, etc.
   <MPIFC> mpxlf2003_r </MPIFC>
   <SCC> cc_r </SCC>
   <MPICC> mpcc_r </MPICC>  
-  <ADD_CPPFLAGS> -DF2003 </ADD_CPPFLAGS>
+  <ADD_CPPDEFS> -DF2003 </ADD_CPPDEFS>
   <ADD_CFLAGS> -qarch=auto -qtune=auto -qcache=auto </ADD_CFLAGS>
   <ADD_FFLAGS> -qarch=auto -qtune=auto -qcache=auto -qsclk=micro </ADD_FFLAGS>
   <ADD_LDFLAGS DEBUG="TRUE"> -qsigtrap=xl__trcedump </ADD_LDFLAGS>
