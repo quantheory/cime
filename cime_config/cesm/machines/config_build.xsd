@@ -54,7 +54,6 @@
     <xs:sequence>
       <xs:group ref="envTags" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
-    <xs:attribute name="append" type="xs:boolean"/>
     <xs:attribute name="compile_threaded" type="xs:boolean"/>
     <xs:attribute name="DEBUG" type="upperBoolean"/>
     <!-- We could try enumerating all the valid names for models, but that could
