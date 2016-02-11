@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<config_build xmlns="https://github.com/CESM-Development/cime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://github.com/CESM-Development/cime config_build.xsd">
+<config_build>
 <!-- 
 ========================================================================
 This file defines compiler flags for building CESM.  General flags are listed first

@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
 <xs:schema
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    targetNamespace="https://github.com/CESM-Development/cime"
-    xmlns="https://github.com/CESM-Development/cime"
     elementFormDefault="qualified">
 
   <!-- Root element and its type; config_build is just a list of "compiler"

@@ -265,11 +265,6 @@ my $doc = XML::LibXML::Document->new("1.0", "UTF-8");
 my $root = $doc->createElement("config_build");
 $doc->setDocumentElement($root);
 
-# Details of namespace and schema.
-$root->setAttribute("xmlns", "https://github.com/CESM-Development/cime");
-$root->setNamespace("http://www.w3.org/2001/XMLSchema-instance", "xsi", 0);
-$root->setAttributeNS("http://www.w3.org/2001/XMLSchema-instance", "schemaLocation", "https://github.com/CESM-Development/cime config_build.xsd");
-
 # Before proceeding farther, there are a bunch of functions that we want to
 # define.
 
