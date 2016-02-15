@@ -14,18 +14,22 @@ BEGIN{
 require Build::MacroMatchList;
 require Build::MacroMatchTree;
 
-my %FLAG_VARS = map { $_ => 1 } ("CFLAGS", "CMAKE_OPTS", "CONFIG_ARGS",
-                                 "CPPDEFS", "CXX_LDFLAGS", "CXX_LIBS",
-                                 "FC_AUTO_R8", "FFLAGS", "FFLAGS_NOOPT",
-                                 "FIXEDFLAGS", "FREEFLAGS", "LDFLAGS", "MLIBS",
-                                 "SLIBS");
-
 sub new {
     my ($class, $schema_path, $os, $mach) = @_;
+    # Get a hash of flag variables from the schema document.
+    my $schema_doc = XML::LibXML->new()->parse_file($schema_path);
+    my $xc = XML::LibXML::XPathContext->new($schema_doc);
+    $xc->registerNs("xs", "http://www.w3.org/2001/XMLSchema");
+    my @schema_elements = $xc->findnodes("//xs:group[\@name='compilerVars']/xs:choice/xs:element[\@type='flagsVar']");
+    my %flag_vars;
+    for my $element (@schema_elements) {
+        $flag_vars{$element->{'name'}} = 1;
+    }
     my $self = {
         schema => XML::LibXML::Schema->new( location => $schema_path ),
         os => $os,
         mach => $mach,
+        flag_vars => \%flag_vars,
     };
     bless $self, $class;
     return $self;
@@ -103,7 +107,7 @@ sub write_macros_file {
         for my $node ($compiler_node->childNodes()) {
             # We want elements (not comments or whitespace).
             if ($node->nodeType == XML_ELEMENT_NODE) {
-                if (defined $FLAG_VARS{$node->nodeName}) {
+                if (defined $self->{'flag_vars'}{$node->nodeName}) {
                     # This is a flag set, so we should look at the base flags to
                     # get the information.
                     for my $base_node ($node->findnodes("base")) {
