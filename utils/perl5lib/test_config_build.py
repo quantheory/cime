@@ -549,6 +549,12 @@ class TestMakeOutput(unittest.TestCase):
         tester = self.xml_to_tester(xml1)
         tester.assert_variable_equals("FFLAGS", "-O2 -fast")
 
+    def test_multiple_shell_commands(self):
+        """Test that more than one <shell> element can be used."""
+        xml1 = """<compiler><FFLAGS><base>-O<shell>echo 2</shell> -<shell>echo fast</shell></base></FFLAGS></compiler>"""
+        tester = self.xml_to_tester(xml1)
+        tester.assert_variable_equals("FFLAGS", "-O2 -fast")
+
     def test_env_and_shell_command(self):
         """Test that <env> elements work inside <shell> elements."""
         xml1 = """<compiler><FFLAGS><base>-O<shell>echo <env>OPT_LEVEL</env></shell> -fast</base></FFLAGS></compiler>"""

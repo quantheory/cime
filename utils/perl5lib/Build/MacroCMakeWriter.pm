@@ -20,6 +20,7 @@ sub new {
     my $self = {
         indent => 0,
         output_fh => $output_fh,
+        variable_number => 0,
     };
     bless $self, $class;
     return $self;
@@ -59,7 +60,11 @@ sub environment_variable_string {
 # Return a string that represents a shell command.
 sub shell_command_string {
     my ($self, $command) = @_;
-    my $var_name = "CIME_TEMP_SHELL";
+    # We use the "variable_number" attribute to avoid reusing the same variable
+    # name multiple times, which could cause multiple <shell> commands to
+    # interfere with one another.
+    my $var_name = "CIME_TEMP_SHELL" . $self->{'variable_number'};
+    $self->{'variable_number'}++;
     my $set_var = "execute_process(COMMAND $command OUTPUT_VARIABLE $var_name OUTPUT_STRIP_TRAILING_WHITESPACE)\n";
     return ("$set_var", "\${$var_name}", "unset($var_name)\n");
 }
