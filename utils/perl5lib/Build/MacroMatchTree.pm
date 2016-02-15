@@ -127,3 +127,51 @@ sub to_build_file {
         }
     }
 }
+
+sub split_tree() {
+    # Split the tree into a part that only has regular values, and one that
+    # only has appended values.
+    my ($self) = @_;
+    my ($normal_self, $append_self);
+    if (defined $self->{'name'}) {
+        if (defined $self->{'value'}) {
+            $normal_self = { %$self };
+            my @empty;
+            $normal_self->{'append_values'} = \@empty;
+            bless $normal_self, ref($self);
+        }
+        my @append_values = @{ $self->{'append_values'} };
+        if (@append_values) {
+            $append_self = { %$self };
+            delete $append_self->{'value'};
+            bless $append_self, ref($self);
+        }
+    } else {
+        my (%normal_macros, %append_macros);
+        my %macros = %{ $self->{'macros'} };
+        for my $key (keys %macros) {
+            my ($normal_tree, $append_tree) = $macros{$key}->split_tree();
+            if (defined $normal_tree) {
+                $normal_macros{$key} = $normal_tree;
+            }
+            if (defined $append_tree) {
+                $append_macros{$key} = $append_tree;
+            }
+        }
+        if (%normal_macros) {
+            $normal_self = {
+                condition_name => $self->{'condition_name'},
+                macros => \%normal_macros,
+            };
+            bless $normal_self, ref($self);
+        }
+        if (%append_macros) {
+            $append_self = {
+                condition_name => $self->{'condition_name'},
+                macros => \%append_macros,
+            };
+            bless $append_self, ref($self);
+        }
+    }
+    return ($normal_self, $append_self);
+}

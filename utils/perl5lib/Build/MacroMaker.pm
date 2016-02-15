@@ -215,9 +215,14 @@ sub write_macros_file {
           # Now write this one.
           $vars_written{$name} = 1;
           $made_progress = 1;
-          my $macro_tree = $match_lists{$name}->to_macro_tree($name);
-          $macro_tree->to_build_file($writer, NORMAL_VAR);
-          $macro_tree->to_build_file($writer, APPEND_VAR);
+          my ($normal_tree, $append_tree) =
+              $match_lists{$name}->to_macro_tree($name)->split_tree();
+          if (defined $normal_tree) {
+              $normal_tree->to_build_file($writer, NORMAL_VAR);
+          }
+          if (defined $append_tree) {
+              $append_tree->to_build_file($writer, APPEND_VAR);
+          }
           delete $match_lists{$name};
       }
         # If we haven't made any progress this round, break out of the infinite
