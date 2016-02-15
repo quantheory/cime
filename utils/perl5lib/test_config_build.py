@@ -191,7 +191,13 @@ query:
         self.make_string = make_string
 
     def query_var(self, var_name, env):
-        """Request the value of a variable after the Makefile is processed."""
+        """Request the value of a variable in the Makefile, as a string.
+
+        Arguments:
+        var_name - Name of the variable to query.
+        env - A dict containing extra environment variables to set when calling
+              make.
+        """
 
         # Write the Makefile strings to temporary files.
         temp_dir = tempfile.mkdtemp()
@@ -217,8 +223,15 @@ query:
 
         return query_result
 
-    def assert_variable_equals(self, var_name, compare_string, env=dict()):
-        self.parent.assertEqual(self.query_var(var_name, env), compare_string)
+    def assert_variable_equals(self, var_name, value, env=dict()):
+        """Assert that a variable in the Makefile has a given value.
+
+        Arguments:
+        var_name - Name of variable to check.
+        value - The string that the variable value should be equal to.
+        env - Optional. Dict of environment variables to set when calling make.
+        """
+        self.parent.assertEqual(self.query_var(var_name, env), value)
 
 
 class TestBasic(unittest.TestCase):
@@ -379,6 +392,39 @@ class TestMakeOutput(unittest.TestCase):
         tester = self.xml_to_tester(xml1+xml2)
         tester.assert_variable_equals("SUPPORTS_CXX", "FALSE")
         tester.assert_variable_equals("SUPPORTS_CXX", "TRUE", env={"COMPILER": "gnu"})
+
+    def test_base_flags(self):
+        """Test that we get "base" compiler flags."""
+        xml1 = """<compiler><FFLAGS><base>-O2</base></FFLAGS></compiler>"""
+        tester = self.xml_to_tester(xml1)
+        tester.assert_variable_equals("FFLAGS", "-O2")
+
+    def test_machine_specific_base_flags(self):
+        """Test selection among base compiler flag sets based on machine."""
+        xml1 = """<compiler><FFLAGS><base>-O2</base></FFLAGS></compiler>"""
+        xml2 = """<compiler MACH="{}"><FFLAGS><base>-O3</base></FFLAGS></compiler>""".format(self.test_machine)
+        tester = self.xml_to_tester(xml1+xml2)
+        tester.assert_variable_equals("FFLAGS", "-O3")
+
+    def test_build_time_base_flags(self):
+        """Test selection of base flags based on build-time attributes."""
+        xml1 = """<compiler><FFLAGS><base>-O2</base></FFLAGS></compiler>"""
+        xml2 = """<compiler><FFLAGS><base DEBUG="TRUE">-O3</base></FFLAGS></compiler>"""
+        tester = self.xml_to_tester(xml1+xml2)
+        tester.assert_variable_equals("FFLAGS", "-O2")
+        tester.assert_variable_equals("FFLAGS", "-O3", env={"DEBUG": "TRUE"})
+
+    def test_build_time_base_flags_same_parent(self):
+        """Test selection of base flags in the same parent element."""
+        xml1 = """<base>-O2</base>"""
+        xml2 = """<base DEBUG="TRUE">-O3</base>"""
+        tester = self.xml_to_tester("<compiler><FFLAGS>"+xml1+xml2+"</FFLAGS></compiler>")
+        tester.assert_variable_equals("FFLAGS", "-O2")
+        tester.assert_variable_equals("FFLAGS", "-O3", env={"DEBUG": "TRUE"})
+        # Check for order independence here, too.
+        tester = self.xml_to_tester("<compiler><FFLAGS>"+xml1+xml2+"</FFLAGS></compiler>")
+        tester.assert_variable_equals("FFLAGS", "-O2")
+        tester.assert_variable_equals("FFLAGS", "-O3", env={"DEBUG": "TRUE"})
 
 
 if __name__ == "__main__":

@@ -14,6 +14,12 @@ BEGIN{
 require Build::MacroMatchList;
 require Build::MacroMatchTree;
 
+my %FLAG_VARS = map { $_ => 1 } ("CFLAGS", "CMAKE_OPTS", "CONFIG_ARGS",
+                                 "CPPDEFS", "CXX_LDFLAGS", "CXX_LIBS",
+                                 "FC_AUTO_R8", "FFLAGS", "FFLAGS_NOOPT",
+                                 "FIXEDFLAGS", "FREEFLAGS", "LDFLAGS", "MLIBS",
+                                 "SLIBS");
+
 sub new {
     my ($class, $schema_path, $os, $mach) = @_;
     my $self = {
@@ -23,6 +29,36 @@ sub new {
     };
     bless $self, $class;
     return $self;
+}
+
+# Take a variable name, how machine-specific the match is, a node, a set of
+# variable match lists, and the compiler vender (if any, optional), and add
+# the node and its conditions to the appropriate match list (creating a new
+# list if necessary.
+sub add_node_to_lists {
+    my ($self, $name, $specificity, $node, $match_lists, $node_compiler) = @_;
+    my @attributes = $node->attributes();
+    my %conditions;
+    for my $attribute (@attributes) {
+        $conditions{$attribute->nodeName} = $attribute->getValue();
+    }
+    if (defined $node_compiler) {
+        $conditions{"COMPILER"} = $node_compiler;
+    }
+    # Make a match list if this is a new variable, or append it to
+    # the list if we've seen a variable of this name already. The
+    # MacroMatchList object takes care of throwing out less specific
+    # matches in favor of more specific ones.
+    if (!defined $match_lists->{$name}) {
+        $match_lists->{$name} =
+            Build::MacroMatchList->new($specificity,
+                                       \%conditions,
+                                       $node->textContent);
+    } else {
+        $match_lists->{$name}->append_match($specificity,
+                                            \%conditions,
+                                            $node->textContent);
+    }
 }
 
 sub write_macros_file {
@@ -67,28 +103,17 @@ sub write_macros_file {
         for my $node ($compiler_node->childNodes()) {
             # We want elements (not comments or whitespace).
             if ($node->nodeType == XML_ELEMENT_NODE) {
-                # Convert the attributes on this node to a hash.
-                my @attributes = $node->attributes();
-                my %conditions;
-                for my $attribute (@attributes) {
-                    $conditions{$attribute->nodeName} = $attribute->getValue();
-                }
-                if (defined $node_compiler) {
-                    $conditions{"COMPILER"} = $node_compiler;
-                }
-                # Make a match list if this is a new variable, or append it to
-                # the list if we've seen a variable of this name already. The
-                # MacroMatchList object takes care of throwing out less specific
-                # matches in favor of more specific ones.
-                if (!defined $match_lists{$node->nodeName}) {
-                    $match_lists{$node->nodeName} =
-                        Build::MacroMatchList->new($specificity,
-                                                   \%conditions,
-                                                   $node->textContent);
+                if (defined $FLAG_VARS{$node->nodeName}) {
+                    # This is a flag set, so we should look at the base flags to
+                    # get the information.
+                    for my $base_node ($node->findnodes("base")) {
+                        $self->add_node_to_lists($node->nodeName, $specificity, $base_node,
+                                                 \%match_lists, $node_compiler);
+                    }
                 } else {
-                    $match_lists{$node->nodeName}->append_match($specificity,
-                                                                \%conditions,
-                                                                $node->textContent);
+                    # Otherwise, handle this node directly.
+                    $self->add_node_to_lists($node->nodeName, $specificity, $node,
+                                             \%match_lists, $node_compiler);
                 }
             }
         }
