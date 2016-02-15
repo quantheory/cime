@@ -436,6 +436,20 @@ class TestMakeOutput(unittest.TestCase):
         tester = self.xml_to_tester(xml2+xml1)
         tester.assert_variable_equals("FFLAGS", "-delicious -cake")
 
+    def test_append_flags_without_base(self):
+        """Test appending flags to a value coming from the environment."""
+        xml1 = """<compiler><FFLAGS><append>-cake</append></FFLAGS></compiler>"""
+        tester = self.xml_to_tester(xml1)
+        tester.assert_variable_equals("FFLAGS", "-delicious -cake", env={"FFLAGS": "-delicious"})
+
+    def test_build_time_append_flags(self):
+        """Test build_time selection of compiler flags."""
+        xml1 = """<compiler><FFLAGS><append>-cake</append></FFLAGS></compiler>"""
+        xml2 = """<compiler><FFLAGS><append DEBUG="TRUE">-and-pie</append></FFLAGS></compiler>"""
+        tester = self.xml_to_tester(xml1+xml2)
+        tester.assert_variable_equals("FFLAGS", "-cake")
+        tester.assert_variable_equals("FFLAGS", "-cake -and-pie", env={"DEBUG": "TRUE"})
+
 
 if __name__ == "__main__":
     unittest.main()
