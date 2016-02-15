@@ -62,18 +62,24 @@ sub shell_command_string {
     return "\$(shell $command)";
 }
 
+# Return a string that represents a Makefile variable reference.
+sub variable_string {
+    my ($self, $name) = @_;
+    return "\$($name)";
+}
+
 # Write out a string to set a variable to some value.
 sub set_variable {
     my ($self, $name, $value) = @_;
     my $output_fh = $self->output_fh;
-    print $output_fh $self->indent . "$name = $value\n";
+    print $output_fh $self->indent . "$name := $value\n";
 }
 
 # Write out a string to append to a value.
 sub append_variable {
     my ($self, $name, $value) = @_;
     my $output_fh = $self->output_fh;
-    print $output_fh $self->indent . "$name += $value\n";
+    print $output_fh $self->indent . "$name := \$($name) $value\n";
 }
 
 # Start an ifeq block.

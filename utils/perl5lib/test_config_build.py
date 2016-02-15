@@ -471,6 +471,25 @@ class TestMakeOutput(unittest.TestCase):
         tester = self.xml_to_tester(xml1)
         tester.assert_variable_equals("FFLAGS", "-O2 -fast")
 
+    def test_env_and_shell_command(self):
+        """Test that <env> elements work inside <shell> elements."""
+        xml1 = """<compiler><FFLAGS><base>-O<shell>echo <env>OPT_LEVEL</env></shell> -fast</base></FFLAGS></compiler>"""
+        tester = self.xml_to_tester(xml1)
+        tester.assert_variable_equals("FFLAGS", "-O2 -fast", env={"OPT_LEVEL": "2"})
+
+    def test_config_variable_insertion(self):
+        """Test that <var> elements insert variables from config_build."""
+        # Construct an absurd chain of references just to sure that we don't
+        # pass by accident, e.g. outputting things in the right order just due
+        # to good luck in a hash somewhere.
+        xml1 = """<MPI_LIB_NAME>stuff-<var>MPI_PATH</var>-stuff</MPI_LIB_NAME>"""
+        xml2 = """<MPI_PATH><var>MPICC</var></MPI_PATH>"""
+        xml3 = """<MPICC><var>MPICXX</var></MPICC>"""
+        xml4 = """<MPICXX><var>MPIFC</var></MPICXX>"""
+        xml5 = """<MPIFC>mpicc</MPIFC>"""
+        tester = self.xml_to_tester("<compiler>"+xml1+xml2+xml3+xml4+xml5+"</compiler>")
+        tester.assert_variable_equals("MPI_LIB_NAME", "stuff-mpicc-stuff")
+
 
 if __name__ == "__main__":
     unittest.main()

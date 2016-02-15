@@ -22,7 +22,7 @@ use constant {
 sub new {
     # Note that this is constructed with the first match found, so we can be
     # sure that there is always at least one match in the list.
-    my ($class, $specificity, $append_flag, $conditions, $value) = @_;
+    my ($class, $specificity, $append_flag, $conditions, $value, $dependencies) = @_;
     my %match = (
         append_flag => $append_flag,
         conditions => $conditions,
@@ -31,6 +31,7 @@ sub new {
     my $self = {
         specificity => $specificity,
         matches => [\%match],
+        dependencies => $dependencies,
     };
     bless $self, $class;
     return $self;
@@ -47,7 +48,7 @@ sub matches {
 }
 
 sub append_match {
-    my ($self, $specificity, $append_flag, $conditions, $value) = @_;
+    my ($self, $specificity, $append_flag, $conditions, $value, $dependencies) = @_;
     my %match = (
         append_flag => $append_flag,
         conditions => $conditions,
@@ -55,7 +56,8 @@ sub append_match {
     );
     if ($specificity == $self->specificity) {
         # If the new match is equally specific, add it to the list.
-        push @{$self->{"matches"}}, \%match;
+        push @{ $self->{"matches"} }, \%match;
+        push @{ $self->{"dependencies"} }, @{ $dependencies };
     } elsif ($specificity > $self->specificity) {
         # If the new match is more specific, it defeats our entire list, which
         # we should therefore replace with just the new value.

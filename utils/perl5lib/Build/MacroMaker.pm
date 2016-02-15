@@ -48,7 +48,7 @@ sub new {
 # Handle references from a node's contents to an environment variable, another
 # config_build variable, or a shell command.
 sub handle_references {
-    my ($self, $node, $writer) = @_;
+    my ($self, $node, $writer, $dependencies) = @_;
     my $output_text = "";
     for my $child ($node->childNodes()) {
         if ($child->nodeType == XML_TEXT_NODE) {
@@ -59,8 +59,12 @@ sub handle_references {
                 my $env_name = $child->textContent;
                 $output_text .= $writer->environment_variable_string($env_name);
             } elsif ($child_name eq "shell") {
-                my $command_text = $self->handle_references($child, $writer);
+                my $command_text = $self->handle_references($child, $writer, $dependencies);
                 $output_text .= $writer->shell_command_string($command_text);
+            } elsif ($child_name eq "var") {
+                my $var_name = $child->textContent;
+                $output_text .= $writer->variable_string($var_name);
+                push @{ $dependencies }, $var_name;
             } else {
                 # This should be caught in the schema check, but no harm in
                 # throwing an error here if that somehow fails.
@@ -90,18 +94,21 @@ sub add_node_to_lists {
     # the list if we've seen a variable of this name already. The
     # MacroMatchList object takes care of throwing out less specific
     # matches in favor of more specific ones.
-    my $node_contents = $self->handle_references($node, $writer);
+    my @dependencies;
+    my $node_contents = $self->handle_references($node, $writer, \@dependencies);
     if (!defined $match_lists->{$name}) {
         $match_lists->{$name} =
             Build::MacroMatchList->new($specificity,
                                        $append_flag,
                                        \%conditions,
-                                       $node_contents);
+                                       $node_contents,
+                                       \@dependencies);
     } else {
         $match_lists->{$name}->append_match($specificity,
                                             $append_flag,
                                             \%conditions,
-                                            $node_contents);
+                                            $node_contents,
+                                            \@dependencies);
     }
 }
 
@@ -178,10 +185,24 @@ sub write_macros_file {
         }
     }
     # Look at all the variables we've accumulated.
-    for my $name (keys %match_lists) {
-        my $macro_tree = $match_lists{$name}->to_macro_tree($name);
-        $macro_tree->to_makefile($writer, NORMAL_VAR);
-        $macro_tree->to_makefile($writer, APPEND_VAR);
+    my %vars_written;
+    while (%match_lists) {
+      VAR: for my $name (keys %match_lists) {
+          # Make sure that all dependencies of this variable have already
+          # been written.
+          my @dependencies = @{ $match_lists{$name}->{'dependencies'} };
+          for my $dependency (@dependencies) {
+              if (!defined $vars_written{$dependency}) {
+                  next VAR;
+              }
+          }
+          # Now write this one.
+          $vars_written{$name} = 1;
+          my $macro_tree = $match_lists{$name}->to_macro_tree($name);
+          $macro_tree->to_makefile($writer, NORMAL_VAR);
+          $macro_tree->to_makefile($writer, APPEND_VAR);
+          delete $match_lists{$name};
+      }
     }
 }
 
