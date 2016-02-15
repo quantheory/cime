@@ -237,7 +237,9 @@ foreach my $variable_node ( @variable_nodes ) {
 my @gptl_cppdef_nodes = $orig_root->findnodes("compiler/GPTL_CPPDEFS");
 
 foreach my $gptl_node ( @gptl_cppdef_nodes ) {
-    $gptl_node->setNodeName("CPPDEFS");
+    # Even if this was just "GPTL_CPPDEFS" before, we want an "ADD_" prefix
+    # because we don't want to overwrite other CPPDEFS.
+    $gptl_node->setNodeName("ADD_CPPDEFS");
     $gptl_node->setAttribute("MODEL", "gptl");
 }
 
