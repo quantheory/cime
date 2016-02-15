@@ -241,6 +241,17 @@ query:
         """
         self.parent.assertEqual(self.query_var(var_name, env, var), value)
 
+    def assert_variable_matches(self, var_name, regex, env=dict(), var=dict()):
+        """Assert that a variable in the Makefile matches a regex.
+
+        Arguments:
+        var_name - Name of variable to check.
+        regex - The regex to match.
+        env - Optional. Dict of environment variables to set when calling make.
+        var - Optional. Dict of make variables to set when calling make.
+        """
+        self.parent.assertRegexpMatches(self.query_var(var_name, env, var), regex)
+
 
 class CMakeTester(object):
 
@@ -304,15 +315,26 @@ file(WRITE query.out "${{{}}}")
         return query_result
 
     def assert_variable_equals(self, var_name, value, env=dict(), var=dict()):
-        """Assert that a variable in the Makefile has a given value.
+        """Assert that a variable in the CMakeLists has a given value.
 
         Arguments:
         var_name - Name of variable to check.
         value - The string that the variable value should be equal to.
-        env - Optional. Dict of environment variables to set when calling make.
+        env - Optional. Dict of environment variables to set when calling cmake.
         var - Optional. Dict of CMake variables to set when calling cmake.
         """
         self.parent.assertEqual(self.query_var(var_name, env, var), value)
+
+    def assert_variable_matches(self, var_name, regex, env=dict(), var=dict()):
+        """Assert that a variable in the CMkeLists matches a regex.
+
+        Arguments:
+        var_name - Name of variable to check.
+        regex - The regex to match.
+        env - Optional. Dict of environment variables to set when calling cmake.
+        var - Optional. Dict of CMake variables to set when calling cmake.
+        """
+        self.parent.assertRegexpMatches(self.query_var(var_name, env, var), regex)
 
 
 class TestBasic(unittest.TestCase):
@@ -525,6 +547,13 @@ class TestMakeOutput(unittest.TestCase):
         tester = self.xml_to_tester(xml2+xml1)
         tester.assert_variable_equals("FFLAGS", "-delicious -cake")
 
+    def test_machine_specific_append_flags(self):
+        """Test appending flags that are either more or less machine-specific."""
+        xml1 = """<compiler><FFLAGS><append>-delicious</append></FFLAGS></compiler>"""
+        xml2 = """<compiler MACH="{}"><FFLAGS><append>-cake</append></FFLAGS></compiler>""".format(self.test_machine)
+        tester = self.xml_to_tester(xml1+xml2)
+        tester.assert_variable_matches("FFLAGS", "(-delicious -cake|-cake -delicious)")
+
     def test_append_flags_without_base(self):
         """Test appending flags to a value set before Macros is included."""
         xml1 = """<compiler><FFLAGS><append>-cake</append></FFLAGS></compiler>"""
@@ -537,7 +566,7 @@ class TestMakeOutput(unittest.TestCase):
         xml2 = """<compiler><FFLAGS><append DEBUG="TRUE">-and-pie</append></FFLAGS></compiler>"""
         tester = self.xml_to_tester(xml1+xml2)
         tester.assert_variable_equals("FFLAGS", "-cake")
-        tester.assert_variable_equals("FFLAGS", "-cake -and-pie", env={"DEBUG": "TRUE"})
+        tester.assert_variable_matches("FFLAGS", "(-cake -and-pie|-and-pie -cake)", env={"DEBUG": "TRUE"})
 
     def test_environment_variable_insertion(self):
         """Test that <env> elements insert environment variables."""

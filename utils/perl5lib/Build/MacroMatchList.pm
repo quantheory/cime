@@ -60,7 +60,7 @@ sub append_match {
         prepends => $prepends,
         appends => $appends,
     );
-    if ($specificity == $self->specificity) {
+    if ($specificity == $self->specificity || $append_flag == APPEND_VAR) {
         # If the new match is equally specific, add it to the list.
         push @{ $self->{"matches"} }, \%match;
         push @{ $self->{"depends"} }, @{ $depends };
