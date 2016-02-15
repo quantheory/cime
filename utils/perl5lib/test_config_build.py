@@ -240,29 +240,19 @@ class TestBasic(unittest.TestCase):
     def test_script_rejects_bad_xml(self):
         """The macro writer rejects input that's not valid XML."""
         maker = MacroTestMaker("SomeOS", "mymachine")
-        try:
+        with self.assertRaisesRegexp(MacroScriptError,
+                                     "parser error") as asrt:
             maker.make_macros("This is not valid XML.", "make")
-        except MacroScriptError as e:
-            self.assertRegexpMatches(e.error.output, "parser error")
-            # Since failing in this case is fine, remove the temporary
-            # directory.
-            shutil.rmtree(e.temp_test_dir)
-        else:
-            self.fail("Script was handed invalid XML but did not fail.")
+        shutil.rmtree(asrt.exception.temp_test_dir)
 
     def test_script_rejects_xml_failing_schema(self):
         """The macro writer rejects XML that doesn't follow the schema."""
         maker = MacroTestMaker("SomeOS", "mymachine")
         test_xml = _wrap_config_build_xml("<justsometag/>")
-        try:
+        with self.assertRaisesRegexp(MacroScriptError,
+                                     "Schemas validity error") as asrt:
             maker.make_macros(test_xml, "make")
-        except MacroScriptError as e:
-            self.assertRegexpMatches(e.error.output, "Schemas validity error")
-            # Since failing in this case is fine, remove the temporary
-            # directory.
-            shutil.rmtree(e.temp_test_dir)
-        else:
-            self.fail("Script was handed XML not matching the schema but did not fail.")
+        shutil.rmtree(asrt.exception.temp_test_dir)
 
 
 class TestMakeOutput(unittest.TestCase):
@@ -270,16 +260,21 @@ class TestMakeOutput(unittest.TestCase):
     """Makefile macros tests.
 
     This class contains tests of the Makefile output of MacrosMaker.
+
+    Aside from the usual setUp and test methods, this class has a utility method
+    (xml_to_tester) that converts XML input directly to a MakefileTester object.
     """
 
     test_os = "SomeOS"
     test_machine = "mymachine"
 
+    def setUp(self):
+        self._maker = MacroTestMaker(self.test_os, self.test_machine)
+
     def xml_to_tester(self, xml_string):
         """Helper that directly converts an XML string to a MakefileTester."""
-        maker = MacroTestMaker(self.test_os, self.test_machine)
         test_xml = _wrap_config_build_xml(xml_string)
-        return MakefileTester(self, maker.make_macros(test_xml, "make"))
+        return MakefileTester(self, self._maker.make_macros(test_xml, "make"))
 
     def test_generic_item(self):
         """The macro writer can write out a single generic item."""
@@ -349,6 +344,33 @@ class TestMakeOutput(unittest.TestCase):
         tester.assert_variable_equals("MPI_PATH", "/path/to/default")
         tester.assert_variable_equals("MPI_PATH", "/path/to/mpich", env={"MPILIB": "mpich"})
         tester.assert_variable_equals("MPI_PATH", "/path/to/openmpi", env={"MPILIB": "openmpi"})
+
+    def test_reject_duplicate_defaults(self):
+        """The macro writer dies if given many defaults."""
+        xml1 = """<compiler><MPI_PATH>/path/to/default</MPI_PATH></compiler>"""
+        xml2 = """<compiler><MPI_PATH>/path/to/other_default</MPI_PATH></compiler>"""
+        with self.assertRaisesRegexp(MacroScriptError,
+                                     "MacroMaker was given ambiguous XML input") as asrt:
+            self.xml_to_tester(xml1+xml2)
+        shutil.rmtree(asrt.exception.temp_test_dir)
+
+    def test_reject_duplicates(self):
+        """The macro writer dies if given many matches for a given configuration."""
+        xml1 = """<compiler><MPI_PATH MPILIB="mpich">/path/to/mpich</MPI_PATH></compiler>"""
+        xml2 = """<compiler><MPI_PATH MPILIB="mpich">/path/to/mpich2</MPI_PATH></compiler>"""
+        with self.assertRaisesRegexp(MacroScriptError,
+                                     "MacroMaker was given ambiguous XML input") as asrt:
+            self.xml_to_tester(xml1+xml2)
+        shutil.rmtree(asrt.exception.temp_test_dir)
+
+    def test_reject_ambiguous(self):
+        """The macro writer dies if given an ambiguous set of matches."""
+        xml1 = """<compiler><MPI_PATH MPILIB="mpich">/path/to/mpich</MPI_PATH></compiler>"""
+        xml2 = """<compiler><MPI_PATH DEBUG="FALSE">/path/to/mpi-debug</MPI_PATH></compiler>"""
+        with self.assertRaisesRegexp(MacroScriptError,
+                                     "MacroMaker was given ambiguous XML input") as asrt:
+            self.xml_to_tester(xml1+xml2)
+        shutil.rmtree(asrt.exception.temp_test_dir)
 
 
 if __name__ == "__main__":
