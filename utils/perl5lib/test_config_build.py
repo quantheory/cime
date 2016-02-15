@@ -28,6 +28,9 @@ PERL5LIB_ROOT = os.path.join(CIME_ROOT, "utils", "perl5lib")
 # Location of the schema file.
 SCHEMA_PATH = os.path.join(CIME_ROOT, "cime_config", "cesm", "machines", "config_build.xsd")
 
+# Let CMake tests be skipped (they are slow).
+NO_CMAKE = ("SKIP_CMAKE" in os.environ and os.environ["SKIP_CMAKE"] == "TRUE")
+
 class MacroScriptError(Exception):
 
     """Wrapper exception for MacroMaker failures.
@@ -594,6 +597,7 @@ class TestMakeOutput(unittest.TestCase):
         shutil.rmtree(asrt.exception.temp_test_dir)
 
 
+@unittest.skipIf(NO_CMAKE, "CMake tests skipped at user request.")
 class TestCMakeOutput(TestMakeOutput):
 
     """CMake macros tests.
