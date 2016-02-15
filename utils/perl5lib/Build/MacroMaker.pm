@@ -14,6 +14,7 @@ BEGIN{
     # block.
     require Build::MacroMatchList;
     require Build::MacroMatchTree;
+    require Build::MacroMakeWriter;
 }
 
 # Just an enum expressing whether or not a variable setting is from an "append"
@@ -44,12 +45,36 @@ sub new {
     return $self;
 }
 
+# Handle references from a node's contents to an environment variable, another
+# config_build variable, or a shell command.
+sub handle_references {
+    my ($self, $node, $writer) = @_;
+    my $output_text = "";
+    for my $child ($node->childNodes()) {
+        if ($child->nodeType == XML_TEXT_NODE) {
+            $output_text .= $child->data;
+        } elsif ($child->nodeType == XML_ELEMENT_NODE) {
+            my $child_name = $child->nodeName;
+            if ($child_name eq "env") {
+                my $env_name = $child->textContent;
+                $output_text .= $writer->environment_variable_string($env_name);
+            } else {
+                # This should be caught in the schema check, but no harm in
+                # throwing an error here if that somehow fails.
+                die "unrecognized element in variable value: $child_name";
+            }
+        }
+    }
+    return $output_text;
+}
+
 # Take a variable name, how machine-specific the match is, a node, a set of
 # variable match lists, and the compiler vender this applies to (if any), and
 # add the node and its conditions to the appropriate match list (creating a new
 # list if necessary.
 sub add_node_to_lists {
-    my ($self, $name, $specificity, $node, $match_lists, $append_flag, $node_compiler) = @_;
+    # This argument list is admittedly pretty ridiculous.
+    my ($self, $name, $specificity, $node, $match_lists, $append_flag, $writer, $node_compiler) = @_;
     my @attributes = $node->attributes();
     my %conditions;
     for my $attribute (@attributes) {
@@ -62,22 +87,30 @@ sub add_node_to_lists {
     # the list if we've seen a variable of this name already. The
     # MacroMatchList object takes care of throwing out less specific
     # matches in favor of more specific ones.
+    my $node_contents = $self->handle_references($node, $writer);
     if (!defined $match_lists->{$name}) {
         $match_lists->{$name} =
             Build::MacroMatchList->new($specificity,
                                        $append_flag,
                                        \%conditions,
-                                       $node->textContent);
+                                       $node_contents);
     } else {
         $match_lists->{$name}->append_match($specificity,
                                             $append_flag,
                                             \%conditions,
-                                            $node->textContent);
+                                            $node_contents);
     }
 }
 
 sub write_macros_file {
     my ($self, $build_system, $xml_fh, $output_fh) = @_;
+
+    my $writer;
+    if ($build_system eq "make") {
+        $writer = Build::MacroMakeWriter->new($output_fh);
+    } else {
+        die "MacroMaker was given an unrecognized build system";
+    }
 
     my $doc = XML::LibXML->new()->parse_fh($xml_fh);
     if (!defined eval { $self->{"schema"}->validate($doc) }) {
@@ -123,17 +156,20 @@ sub write_macros_file {
                     # get the information.
                     for my $base_node ($node->findnodes("base")) {
                         $self->add_node_to_lists($node->nodeName, $specificity, $base_node,
-                                                 \%match_lists, NORMAL_VAR, $node_compiler);
+                                                 \%match_lists, NORMAL_VAR, $writer,
+                                                 $node_compiler);
                     }
                     # And also the append flags.
                     for my $append_node ($node->findnodes("append")) {
                         $self->add_node_to_lists($node->nodeName, $specificity, $append_node,
-                                                 \%match_lists, APPEND_VAR, $node_compiler);
+                                                 \%match_lists, APPEND_VAR, $writer,
+                                                 $node_compiler);
                     }
                 } else {
                     # Otherwise, handle this node directly.
                     $self->add_node_to_lists($node->nodeName, $specificity, $node,
-                                             \%match_lists, NORMAL_VAR, $node_compiler);
+                                             \%match_lists, NORMAL_VAR, $writer,
+                                             $node_compiler);
                 }
             }
         }
@@ -141,8 +177,8 @@ sub write_macros_file {
     # Look at all the variables we've accumulated.
     for my $name (keys %match_lists) {
         my $macro_tree = $match_lists{$name}->to_macro_tree($name);
-        $macro_tree->to_makefile(NORMAL_VAR, "", $output_fh);
-        $macro_tree->to_makefile(APPEND_VAR, "", $output_fh);
+        $macro_tree->to_makefile($writer, NORMAL_VAR);
+        $macro_tree->to_makefile($writer, APPEND_VAR);
     }
 }
 

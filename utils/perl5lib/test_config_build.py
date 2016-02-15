@@ -267,6 +267,14 @@ class TestBasic(unittest.TestCase):
             maker.make_macros(test_xml, "make")
         shutil.rmtree(asrt.exception.temp_test_dir)
 
+    def test_script_rejects_bad_build_system(self):
+        """The macro writer rejects a bad build system string."""
+        maker = MacroTestMaker("SomeOS", "mymachine")
+        with self.assertRaisesRegexp(MacroScriptError,
+                                     "MacroMaker was given an unrecognized build system") as asrt:
+            maker.make_macros("This string is irrelevant.", "argle-bargle")
+        shutil.rmtree(asrt.exception.temp_test_dir)
+
 
 class TestMakeOutput(unittest.TestCase):
 
@@ -449,6 +457,13 @@ class TestMakeOutput(unittest.TestCase):
         tester = self.xml_to_tester(xml1+xml2)
         tester.assert_variable_equals("FFLAGS", "-cake")
         tester.assert_variable_equals("FFLAGS", "-cake -and-pie", env={"DEBUG": "TRUE"})
+
+    def test_environment_variable_insertion(self):
+        """Test that <env> elements insert environment variables."""
+        xml1 = """<compiler><LDFLAGS><append>-L<env>NETCDF</env> -lnetcdf</append></LDFLAGS></compiler>"""
+        tester = self.xml_to_tester(xml1)
+        tester.assert_variable_equals("LDFLAGS", "-L/path/to/netcdf -lnetcdf",
+                                      env={"NETCDF": "/path/to/netcdf"})
 
 
 if __name__ == "__main__":

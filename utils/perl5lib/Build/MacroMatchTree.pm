@@ -85,18 +85,18 @@ sub new {
 }
 
 sub to_makefile {
-    my ($self, $append_flag, $indent, $output_fh) = @_;
+    my ($self, $writer, $append_flag) = @_;
 
     if (defined $self->{'name'}) {
         my $name = $self->{'name'};
         if ($append_flag == NORMAL_VAR) {
             my $value = $self->{'value'};
             if (defined $value) {
-                print $output_fh $indent . "$name = $value\n";
+                $writer->set_variable($name, $value);
             }
         } else {
             for my $value (@{ $self->{'append_values'} }) {
-                print $output_fh $indent . "$name += $value\n";
+                $writer->append_variable($name, $value);
             }
         }
     } else {
@@ -105,14 +105,13 @@ sub to_makefile {
         # Print out all the "default" values first (the ones that don't use this
         # condition).
         if (defined $macros{""}) {
-            $macros{""}->to_makefile($append_flag, $indent, $output_fh);
+            $macros{""}->to_makefile($writer, $append_flag);
         }
         for my $condition_value (keys %macros) {
             if ($condition_value eq "") { next; }
-            print $output_fh $indent."ifeq (\$($condition_name),$condition_value)\n";
-            my $new_indent = $indent . "  ";
-            $macros{$condition_value}->to_makefile($append_flag, $new_indent, $output_fh);
-            print $output_fh "endif\n";
+            $writer->start_ifeq("\$($condition_name)", $condition_value);
+            $macros{$condition_value}->to_makefile($writer, $append_flag);
+            $writer->end_ifeq();
         }
     }
 }
