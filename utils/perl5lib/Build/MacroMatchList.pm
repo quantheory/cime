@@ -9,15 +9,22 @@ my $logger;
 
 BEGIN{
     $logger = get_logger();
+    require Build::MacroMatchTree;
 }
 
-require Build::MacroMatchList;
+# Just an enum expressing whether or not a variable setting is from an "append"
+# element.
+use constant {
+    NORMAL_VAR => Build::MacroMatchTree::NORMAL_VAR,
+    APPEND_VAR => Build::MacroMatchTree::APPEND_VAR,
+};
 
 sub new {
     # Note that this is constructed with the first match found, so we can be
     # sure that there is always at least one match in the list.
-    my ($class, $specificity, $conditions, $value) = @_;
+    my ($class, $specificity, $append_flag, $conditions, $value) = @_;
     my %match = (
+        append_flag => $append_flag,
         conditions => $conditions,
         value => $value,
     );
@@ -40,8 +47,9 @@ sub matches {
 }
 
 sub append_match {
-    my ($self, $specificity, $conditions, $value) = @_;
+    my ($self, $specificity, $append_flag, $conditions, $value) = @_;
     my %match = (
+        append_flag => $append_flag,
         conditions => $conditions,
         value => $value,
     );
@@ -66,9 +74,11 @@ sub ambiguity_check {
     my @remaining_matches = $self->matches;
     my $current_match_ref;
     while ($current_match_ref = pop @remaining_matches) {
+        if ($current_match_ref->{'append_flag'} != NORMAL_VAR) { next; }
         my %current_conditions = %{ $current_match_ref->{'conditions'} };
         my @current_keys = keys %current_conditions;
         for my $other_match_ref (@remaining_matches) {
+            if ($other_match_ref->{'append_flag'} != NORMAL_VAR) { next; }
             my %other_conditions = %{ $other_match_ref->{'conditions'} };
 
             # Having that information, we need to figure out if two variable

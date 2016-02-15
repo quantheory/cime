@@ -9,10 +9,19 @@ my $logger;
 
 BEGIN{
     $logger = get_logger();
+    # It might be hard to see where things come from if these are "use"'d, but
+    # the use of constants means that they should be "require"'d in a BEGIN
+    # block.
+    require Build::MacroMatchList;
+    require Build::MacroMatchTree;
 }
 
-require Build::MacroMatchList;
-require Build::MacroMatchTree;
+# Just an enum expressing whether or not a variable setting is from an "append"
+# element.
+use constant {
+    NORMAL_VAR => Build::MacroMatchTree::NORMAL_VAR,
+    APPEND_VAR => Build::MacroMatchTree::APPEND_VAR,
+};
 
 sub new {
     my ($class, $schema_path, $os, $mach) = @_;
@@ -36,11 +45,11 @@ sub new {
 }
 
 # Take a variable name, how machine-specific the match is, a node, a set of
-# variable match lists, and the compiler vender (if any, optional), and add
-# the node and its conditions to the appropriate match list (creating a new
+# variable match lists, and the compiler vender this applies to (if any), and
+# add the node and its conditions to the appropriate match list (creating a new
 # list if necessary.
 sub add_node_to_lists {
-    my ($self, $name, $specificity, $node, $match_lists, $node_compiler) = @_;
+    my ($self, $name, $specificity, $node, $match_lists, $append_flag, $node_compiler) = @_;
     my @attributes = $node->attributes();
     my %conditions;
     for my $attribute (@attributes) {
@@ -56,10 +65,12 @@ sub add_node_to_lists {
     if (!defined $match_lists->{$name}) {
         $match_lists->{$name} =
             Build::MacroMatchList->new($specificity,
+                                       $append_flag,
                                        \%conditions,
                                        $node->textContent);
     } else {
         $match_lists->{$name}->append_match($specificity,
+                                            $append_flag,
                                             \%conditions,
                                             $node->textContent);
     }
@@ -112,12 +123,17 @@ sub write_macros_file {
                     # get the information.
                     for my $base_node ($node->findnodes("base")) {
                         $self->add_node_to_lists($node->nodeName, $specificity, $base_node,
-                                                 \%match_lists, $node_compiler);
+                                                 \%match_lists, NORMAL_VAR, $node_compiler);
+                    }
+                    # And also the append flags.
+                    for my $append_node ($node->findnodes("append")) {
+                        $self->add_node_to_lists($node->nodeName, $specificity, $append_node,
+                                                 \%match_lists, APPEND_VAR, $node_compiler);
                     }
                 } else {
                     # Otherwise, handle this node directly.
                     $self->add_node_to_lists($node->nodeName, $specificity, $node,
-                                             \%match_lists, $node_compiler);
+                                             \%match_lists, NORMAL_VAR, $node_compiler);
                 }
             }
         }
@@ -125,7 +141,8 @@ sub write_macros_file {
     # Look at all the variables we've accumulated.
     for my $name (keys %match_lists) {
         my $macro_tree = $match_lists{$name}->to_macro_tree($name);
-        $macro_tree->to_makefile("", $output_fh);
+        $macro_tree->to_makefile(NORMAL_VAR, "", $output_fh);
+        $macro_tree->to_makefile(APPEND_VAR, "", $output_fh);
     }
 }
 

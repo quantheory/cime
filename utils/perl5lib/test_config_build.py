@@ -422,9 +422,19 @@ class TestMakeOutput(unittest.TestCase):
         tester.assert_variable_equals("FFLAGS", "-O2")
         tester.assert_variable_equals("FFLAGS", "-O3", env={"DEBUG": "TRUE"})
         # Check for order independence here, too.
-        tester = self.xml_to_tester("<compiler><FFLAGS>"+xml1+xml2+"</FFLAGS></compiler>")
+        tester = self.xml_to_tester("<compiler><FFLAGS>"+xml2+xml1+"</FFLAGS></compiler>")
         tester.assert_variable_equals("FFLAGS", "-O2")
         tester.assert_variable_equals("FFLAGS", "-O3", env={"DEBUG": "TRUE"})
+
+    def test_append_flags(self):
+        """Test appending flags to a list."""
+        xml1 = """<compiler><FFLAGS><base>-delicious</base></FFLAGS></compiler>"""
+        xml2 = """<compiler><FFLAGS><append>-cake</append></FFLAGS></compiler>"""
+        tester = self.xml_to_tester(xml1+xml2)
+        tester.assert_variable_equals("FFLAGS", "-delicious -cake")
+        # Order independence, as usual.
+        tester = self.xml_to_tester(xml2+xml1)
+        tester.assert_variable_equals("FFLAGS", "-delicious -cake")
 
 
 if __name__ == "__main__":

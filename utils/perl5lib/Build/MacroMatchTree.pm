@@ -11,6 +11,13 @@ BEGIN{
     $logger = get_logger();
 }
 
+# Just an enum expressing whether or not a variable setting is from an "append"
+# element.
+use constant {
+    NORMAL_VAR => 0,
+    APPEND_VAR => 1,
+};
+
 # This class forms a tree of Macros separated out according to the various
 # conditions under which they are used (i.e. DEBUG, compile_threaded, etc.).
 
@@ -57,10 +64,20 @@ sub new {
             macros => \%macros,
         }
     } else {
-        # Just the default here.
+        # This is a leaf of our tree; just include the values now.
+        my $value;
+        my @append_values;
+        for my $match (@matches) {
+            if ($match->{'append_flag'} == NORMAL_VAR) {
+                $value = $match->{'value'};
+            } else {
+                push @append_values, $match->{'value'};
+            }
+        }
         $self = {
-            sole_name => $name,
-            sole_value => $matches[0]->{'value'},
+            name => $name,
+            value => $value,
+            append_values => \@append_values,
         };
     }
     bless $self, $class;
@@ -68,25 +85,33 @@ sub new {
 }
 
 sub to_makefile {
-    my ($self, $indent, $output_fh) = @_;
+    my ($self, $append_flag, $indent, $output_fh) = @_;
 
-    if (defined $self->{'sole_name'}) {
-        my $name = $self->{'sole_name'};
-        my $value = $self->{'sole_value'};
-        print $output_fh $indent . "$name=$value\n";
+    if (defined $self->{'name'}) {
+        my $name = $self->{'name'};
+        if ($append_flag == NORMAL_VAR) {
+            my $value = $self->{'value'};
+            if (defined $value) {
+                print $output_fh $indent . "$name = $value\n";
+            }
+        } else {
+            for my $value (@{ $self->{'append_values'} }) {
+                print $output_fh $indent . "$name += $value\n";
+            }
+        }
     } else {
         my $condition_name = $self->{'condition_name'};
         my %macros = %{ $self->{'macros'} };
         # Print out all the "default" values first (the ones that don't use this
         # condition).
         if (defined $macros{""}) {
-            $macros{""}->to_makefile($indent, $output_fh);
+            $macros{""}->to_makefile($append_flag, $indent, $output_fh);
         }
         for my $condition_value (keys %macros) {
             if ($condition_value eq "") { next; }
             print $output_fh $indent."ifeq (\$($condition_name),$condition_value)\n";
             my $new_indent = $indent . "  ";
-            $macros{$condition_value}->to_makefile($new_indent, $output_fh);
+            $macros{$condition_value}->to_makefile($append_flag, $new_indent, $output_fh);
             print $output_fh "endif\n";
         }
     }
