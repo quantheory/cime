@@ -465,6 +465,12 @@ class TestMakeOutput(unittest.TestCase):
         tester.assert_variable_equals("LDFLAGS", "-L/path/to/netcdf -lnetcdf",
                                       env={"NETCDF": "/path/to/netcdf"})
 
+    def test_shell_command_insertion(self):
+        """Test that <shell> elements insert shell command output."""
+        xml1 = """<compiler><FFLAGS><base>-O<shell>echo 2</shell> -fast</base></FFLAGS></compiler>"""
+        tester = self.xml_to_tester(xml1)
+        tester.assert_variable_equals("FFLAGS", "-O2 -fast")
+
 
 if __name__ == "__main__":
     unittest.main()

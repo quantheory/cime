@@ -58,6 +58,9 @@ sub handle_references {
             if ($child_name eq "env") {
                 my $env_name = $child->textContent;
                 $output_text .= $writer->environment_variable_string($env_name);
+            } elsif ($child_name eq "shell") {
+                my $command_text = $self->handle_references($child, $writer);
+                $output_text .= $writer->shell_command_string($command_text);
             } else {
                 # This should be caught in the schema check, but no harm in
                 # throwing an error here if that somehow fails.

@@ -56,6 +56,12 @@ sub environment_variable_string {
     return "\$($name)";
 }
 
+# Return a string that represents a shell command.
+sub shell_command_string {
+    my ($self, $command) = @_;
+    return "\$(shell $command)";
+}
+
 # Write out a string to set a variable to some value.
 sub set_variable {
     my ($self, $name, $value) = @_;
