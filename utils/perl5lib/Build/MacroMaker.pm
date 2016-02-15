@@ -60,6 +60,9 @@ sub write_macros_file {
                 next;
             }
         }
+        # COMPILER doesn't relate to the specificity, since we allow it to
+        # be changed at build time.
+        my $node_compiler = $compiler_node->getAttribute("COMPILER");
         # Look at everything in this compiler node.
         for my $node ($compiler_node->childNodes()) {
             # We want elements (not comments or whitespace).
@@ -69,6 +72,9 @@ sub write_macros_file {
                 my %conditions;
                 for my $attribute (@attributes) {
                     $conditions{$attribute->nodeName} = $attribute->getValue();
+                }
+                if (defined $node_compiler) {
+                    $conditions{"COMPILER"} = $node_compiler;
                 }
                 # Make a match list if this is a new variable, or append it to
                 # the list if we've seen a variable of this name already. The

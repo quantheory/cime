@@ -372,6 +372,14 @@ class TestMakeOutput(unittest.TestCase):
             self.xml_to_tester(xml1+xml2)
         shutil.rmtree(asrt.exception.temp_test_dir)
 
+    def test_compiler_changeable_at_build_time(self):
+        """The macro writer writes information for multiple compilers."""
+        xml1 = """<compiler><SUPPORTS_CXX>FALSE</SUPPORTS_CXX></compiler>"""
+        xml2 = """<compiler COMPILER="gnu"><SUPPORTS_CXX>TRUE</SUPPORTS_CXX></compiler>"""
+        tester = self.xml_to_tester(xml1+xml2)
+        tester.assert_variable_equals("SUPPORTS_CXX", "FALSE")
+        tester.assert_variable_equals("SUPPORTS_CXX", "TRUE", env={"COMPILER": "gnu"})
+
 
 if __name__ == "__main__":
     unittest.main()
