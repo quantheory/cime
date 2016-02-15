@@ -184,9 +184,13 @@ sub write_macros_file {
             }
         }
     }
-    # Look at all the variables we've accumulated.
+    # We have to loop through all the variables we've collected now to write
+    # them out. (In some cases, multiple times, since a variable may have to
+    # come after some other variable.)
     my %vars_written;
     while (%match_lists) {
+        # Make sure that we actually progress each loop.
+        my $made_progress = 0;
       VAR: for my $name (keys %match_lists) {
           # Make sure that all dependencies of this variable have already
           # been written.
@@ -198,11 +202,17 @@ sub write_macros_file {
           }
           # Now write this one.
           $vars_written{$name} = 1;
+          $made_progress = 1;
           my $macro_tree = $match_lists{$name}->to_macro_tree($name);
           $macro_tree->to_makefile($writer, NORMAL_VAR);
           $macro_tree->to_makefile($writer, APPEND_VAR);
           delete $match_lists{$name};
       }
+        # If we haven't made any progress this round, break out of the infinite
+        # loop, presumably caused by a circular reference.
+        if (!$made_progress) {
+            die "MacroMaker was given XML output with a circular <var> reference";
+        }
     }
 }
 

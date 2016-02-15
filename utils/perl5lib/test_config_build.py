@@ -490,6 +490,25 @@ class TestMakeOutput(unittest.TestCase):
         tester = self.xml_to_tester("<compiler>"+xml1+xml2+xml3+xml4+xml5+"</compiler>")
         tester.assert_variable_equals("MPI_LIB_NAME", "stuff-mpicc-stuff")
 
+    def test_config_reject_self_references(self):
+        """Test that <var> self-references are rejected."""
+        # This is a special case of the next test, which also checks circular
+        # references.
+        xml1 = """<MPI_LIB_NAME><var>MPI_LIB_NAME</var></MPI_LIB_NAME>"""
+        err_msg = "MacroMaker was given XML output with a circular <var> reference"
+        with self.assertRaisesRegexp(MacroScriptError, err_msg) as asrt:
+            self.xml_to_tester("<compiler>"+xml1+"</compiler>")
+        shutil.rmtree(asrt.exception.temp_test_dir)
+
+    def test_config_reject_cyclical_references(self):
+        """Test that cyclical <var> references are rejected."""
+        xml1 = """<MPI_LIB_NAME><var>MPI_PATH</var></MPI_LIB_NAME>"""
+        xml2 = """<MPI_PATH><var>MPI_LIB_NAME</var></MPI_PATH>"""
+        err_msg = "MacroMaker was given XML output with a circular <var> reference"
+        with self.assertRaisesRegexp(MacroScriptError, err_msg) as asrt:
+            self.xml_to_tester("<compiler>"+xml1+xml2+"</compiler>")
+        shutil.rmtree(asrt.exception.temp_test_dir)
+
 
 if __name__ == "__main__":
     unittest.main()
