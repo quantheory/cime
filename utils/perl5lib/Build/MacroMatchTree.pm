@@ -65,6 +65,7 @@ sub new {
         }
     } else {
         # This is a leaf of our tree; just include the values now.
+        my (@prepends, @appends);
         my $value;
         my @append_values;
         for my $match (@matches) {
@@ -73,22 +74,29 @@ sub new {
             } else {
                 push @append_values, $match->{'value'};
             }
+            push @prepends, @{$match->{'prepends'}};
+            push @appends, @{$match->{'appends'}};
         }
         $self = {
             name => $name,
             value => $value,
             append_values => \@append_values,
+            prepends => \@prepends,
+            appends => \@appends,
         };
     }
     bless $self, $class;
     return $self;
 }
 
-sub to_makefile {
+sub to_build_file {
     my ($self, $writer, $append_flag) = @_;
 
     if (defined $self->{'name'}) {
         my $name = $self->{'name'};
+        for my $prepend (@{ $self->{'prepends'} }) {
+            $writer->write($prepend);
+        }
         if ($append_flag == NORMAL_VAR) {
             my $value = $self->{'value'};
             if (defined $value) {
@@ -99,18 +107,22 @@ sub to_makefile {
                 $writer->append_variable($name, $value);
             }
         }
+        for my $append (@{ $self->{'appends'} }) {
+            $writer->write($append);
+        }
     } else {
         my $condition_name = $self->{'condition_name'};
         my %macros = %{ $self->{'macros'} };
         # Print out all the "default" values first (the ones that don't use this
         # condition).
         if (defined $macros{""}) {
-            $macros{""}->to_makefile($writer, $append_flag);
+            $macros{""}->to_build_file($writer, $append_flag);
         }
         for my $condition_value (keys %macros) {
             if ($condition_value eq "") { next; }
-            $writer->start_ifeq("\$($condition_name)", $condition_value);
-            $macros{$condition_value}->to_makefile($writer, $append_flag);
+            my $env_ref = $writer->environment_variable_string($condition_name);
+            $writer->start_ifeq($env_ref, $condition_value);
+            $macros{$condition_value}->to_build_file($writer, $append_flag);
             $writer->end_ifeq();
         }
     }

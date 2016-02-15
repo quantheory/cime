@@ -1,4 +1,4 @@
-package Build::MacroMakeWriter;
+package Build::MacroCMakeWriter;
 
 use strict;
 use warnings;
@@ -11,8 +11,7 @@ BEGIN{
     $logger = get_logger();
 }
 
-# Number of spaces to indent (mostly for `ifeq` blocks, since for other things
-# Makefiles should use tab indentation).
+# Number of spaces to indent for if blocks.
 use constant INDENT_INCREMENT => 2;
 
 # Create a new writer using a file handle.
@@ -54,37 +53,40 @@ sub indent {
 # Return a string that represents an environment variable reference.
 sub environment_variable_string {
     my ($self, $name) = @_;
-    return "\$($name)";
+    return "\$ENV{$name}";
 }
 
 # Return a string that represents a shell command.
 sub shell_command_string {
     my ($self, $command) = @_;
-    return ("", "\$(shell $command)", "");
+    my $var_name = "CIME_TEMP_SHELL";
+    my $set_var = "execute_process(COMMAND $command OUTPUT_VARIABLE $var_name OUTPUT_STRIP_TRAILING_WHITESPACE)\n";
+    return ("$set_var", "\${$var_name}", "unset($var_name)\n");
 }
 
-# Return a string that represents a Makefile variable reference.
+# Return a string that represents a CMake variable reference.
 sub variable_string {
     my ($self, $name) = @_;
-    return "\$($name)";
+    return "\${CIME_$name}";
 }
 
 # Write out a string to set a variable to some value.
 sub set_variable {
     my ($self, $name, $value) = @_;
-    $self->write("$name := $value\n");
+    $self->write("set(CIME_$name \"$value\")\n");
 }
 
 # Write out a string to append to a value.
 sub append_variable {
     my ($self, $name, $value) = @_;
-    $self->write("$name := \$($name) $value\n");
+    my $self_ref = $self->variable_string($name);
+    $self->write("set(CIME_$name \"$self_ref $value\")\n");
 }
 
 # Start an ifeq block.
 sub start_ifeq {
     my ($self, $left, $right) = @_;
-    $self->write("ifeq ($left,$right)\n");
+    $self->write("if(\"$left\" STREQUAL \"$right\")\n");
     $self->indent_right();
 }
 
@@ -92,5 +94,5 @@ sub start_ifeq {
 sub end_ifeq {
     my ($self) = @_;
     $self->indent_left();
-    $self->write("endif\n");
+    $self->write("endif()\n");
 }

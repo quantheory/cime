@@ -15,6 +15,7 @@ BEGIN{
     require Build::MacroMatchList;
     require Build::MacroMatchTree;
     require Build::MacroMakeWriter;
+    require Build::MacroCMakeWriter;
 }
 
 # Just an enum expressing whether or not a variable setting is from an "append"
@@ -48,7 +49,7 @@ sub new {
 # Handle references from a node's contents to an environment variable, another
 # config_build variable, or a shell command.
 sub handle_references {
-    my ($self, $node, $writer, $dependencies) = @_;
+    my ($self, $node, $writer, $prepends, $appends, $depends) = @_;
     my $output_text = "";
     for my $child ($node->childNodes()) {
         if ($child->nodeType == XML_TEXT_NODE) {
@@ -59,12 +60,16 @@ sub handle_references {
                 my $env_name = $child->textContent;
                 $output_text .= $writer->environment_variable_string($env_name);
             } elsif ($child_name eq "shell") {
-                my $command_text = $self->handle_references($child, $writer, $dependencies);
-                $output_text .= $writer->shell_command_string($command_text);
+                my $command_text = $self->handle_references($child, $writer, $prepends,
+                                                            $appends, $depends);
+                my ($prepend, $inline, $append) = $writer->shell_command_string($command_text);
+                $output_text .= $inline;
+                push @{ $prepends }, $prepend;
+                push @{ $appends }, $append;
             } elsif ($child_name eq "var") {
                 my $var_name = $child->textContent;
                 $output_text .= $writer->variable_string($var_name);
-                push @{ $dependencies }, $var_name;
+                push @{ $depends }, $var_name;
             } else {
                 # This should be caught in the schema check, but no harm in
                 # throwing an error here if that somehow fails.
@@ -94,21 +99,26 @@ sub add_node_to_lists {
     # the list if we've seen a variable of this name already. The
     # MacroMatchList object takes care of throwing out less specific
     # matches in favor of more specific ones.
-    my @dependencies;
-    my $node_contents = $self->handle_references($node, $writer, \@dependencies);
+    my (@prepends, @appends, @depends);
+    my $node_contents = $self->handle_references($node, $writer, \@prepends,
+                                                 \@appends, \@depends);
     if (!defined $match_lists->{$name}) {
         $match_lists->{$name} =
             Build::MacroMatchList->new($specificity,
                                        $append_flag,
                                        \%conditions,
                                        $node_contents,
-                                       \@dependencies);
+                                       \@prepends,
+                                       \@appends,
+                                       \@depends);
     } else {
         $match_lists->{$name}->append_match($specificity,
                                             $append_flag,
                                             \%conditions,
                                             $node_contents,
-                                            \@dependencies);
+                                            \@prepends,
+                                            \@appends,
+                                            \@depends);
     }
 }
 
@@ -118,6 +128,8 @@ sub write_macros_file {
     my $writer;
     if ($build_system eq "make") {
         $writer = Build::MacroMakeWriter->new($output_fh);
+    } elsif ($build_system eq "cmake") {
+        $writer = Build::MacroCMakeWriter->new($output_fh);
     } else {
         die "MacroMaker was given an unrecognized build system";
     }
@@ -194,9 +206,9 @@ sub write_macros_file {
       VAR: for my $name (keys %match_lists) {
           # Make sure that all dependencies of this variable have already
           # been written.
-          my @dependencies = @{ $match_lists{$name}->{'dependencies'} };
-          for my $dependency (@dependencies) {
-              if (!defined $vars_written{$dependency}) {
+          my @depends = @{ $match_lists{$name}->{'depends'} };
+          for my $depend (@depends) {
+              if (!defined $vars_written{$depend}) {
                   next VAR;
               }
           }
@@ -204,8 +216,8 @@ sub write_macros_file {
           $vars_written{$name} = 1;
           $made_progress = 1;
           my $macro_tree = $match_lists{$name}->to_macro_tree($name);
-          $macro_tree->to_makefile($writer, NORMAL_VAR);
-          $macro_tree->to_makefile($writer, APPEND_VAR);
+          $macro_tree->to_build_file($writer, NORMAL_VAR);
+          $macro_tree->to_build_file($writer, APPEND_VAR);
           delete $match_lists{$name};
       }
         # If we haven't made any progress this round, break out of the infinite

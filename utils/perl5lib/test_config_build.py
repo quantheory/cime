@@ -137,7 +137,7 @@ class MacroTestMaker(object):
             # that information in the exception.
             raise MacroScriptError(e, temp_dir)
 
-        # Read in the Makefile output.
+        # Read in the Makefile/CMake output.
         with open(output_file_name, "r") as output_file:
             output_string = output_file.read()
 
@@ -178,7 +178,7 @@ class MakefileTester(object):
 include Macros
 query:
 	$(file > query.out,$({}))
-    """
+"""
 
     def __init__(self, parent, make_string):
         """Constructor for Makefile test helper class.
@@ -190,13 +190,16 @@ query:
         self.parent = parent
         self.make_string = make_string
 
-    def query_var(self, var_name, env):
+    def query_var(self, var_name, env, var):
         """Request the value of a variable in the Makefile, as a string.
 
         Arguments:
         var_name - Name of the variable to query.
         env - A dict containing extra environment variables to set when calling
               make.
+        var - A dict containing extra make variables to set when calling make.
+              (The distinction between env and var actually matters only for
+               CMake, though.)
         """
 
         # Write the Makefile strings to temporary files.
@@ -212,6 +215,7 @@ query:
 
         environment = os.environ.copy()
         environment.update(env)
+        environment.update(var)
         subprocess.check_output(["gmake", "query", "--directory="+temp_dir],
                                 stderr=subprocess.STDOUT, env=environment)
 
@@ -223,15 +227,89 @@ query:
 
         return query_result
 
-    def assert_variable_equals(self, var_name, value, env=dict()):
+    def assert_variable_equals(self, var_name, value, env=dict(), var=dict()):
         """Assert that a variable in the Makefile has a given value.
 
         Arguments:
         var_name - Name of variable to check.
         value - The string that the variable value should be equal to.
         env - Optional. Dict of environment variables to set when calling make.
+        var - Optional. Dict of make variables to set when calling make.
         """
-        self.parent.assertEqual(self.query_var(var_name, env), value)
+        self.parent.assertEqual(self.query_var(var_name, env, var), value)
+
+
+class CMakeTester(object):
+
+    """Helper class for checking CMake output.
+
+    Public methods:
+    __init__
+    query_var
+    assert_variable_equals
+    """
+
+    _cmakelists_template = """
+include(./Macros.cmake)
+file(WRITE query.out "${{{}}}")
+"""
+
+    def __init__(self, parent, cmake_string):
+        """Constructor for CMake test helper class.
+
+        Arguments:
+        parent - The TestCase object that is using this item.
+        cmake_string - CMake contents to test.
+        """
+        self.parent = parent
+        self.cmake_string = cmake_string
+
+    def query_var(self, var_name, env, var):
+        """Request the value of a variable in Macros.cmake, as a string.
+
+        Arguments:
+        var_name - Name of the variable to query.
+        env - A dict containing extra environment variables to set when calling
+              cmake.
+        var - A dict containing extra CMake variables to set when calling cmake.
+        """
+
+        # Write the CMake strings to temporary files.
+        temp_dir = tempfile.mkdtemp()
+        macros_file_name = os.path.join(temp_dir, "Macros.cmake")
+        cmakelists_name = os.path.join(temp_dir, "CMakeLists.txt")
+        output_name = os.path.join(temp_dir, "query.out")
+
+        with open(macros_file_name, "w") as macros_file:
+            for key in var:
+                macros_file.write("set(CIME_{} {})\n".format(key, var[key]))
+            macros_file.write(self.cmake_string)
+        with open(cmakelists_name, "w") as cmakelists:
+            cmakelists.write(self._cmakelists_template.format("CIME_"+var_name))
+
+        environment = os.environ.copy()
+        environment.update(env)
+        subprocess.check_output(["cmake", "."], cwd=temp_dir,
+                                stderr=subprocess.STDOUT, env=environment)
+
+        with open(output_name, "r") as output:
+            query_result = output.read().strip()
+
+        # Clean up the CMake files.
+        shutil.rmtree(temp_dir)
+
+        return query_result
+
+    def assert_variable_equals(self, var_name, value, env=dict(), var=dict()):
+        """Assert that a variable in the Makefile has a given value.
+
+        Arguments:
+        var_name - Name of variable to check.
+        value - The string that the variable value should be equal to.
+        env - Optional. Dict of environment variables to set when calling make.
+        var - Optional. Dict of CMake variables to set when calling cmake.
+        """
+        self.parent.assertEqual(self.query_var(var_name, env, var), value)
 
 
 class TestBasic(unittest.TestCase):
@@ -445,10 +523,10 @@ class TestMakeOutput(unittest.TestCase):
         tester.assert_variable_equals("FFLAGS", "-delicious -cake")
 
     def test_append_flags_without_base(self):
-        """Test appending flags to a value coming from the environment."""
+        """Test appending flags to a value set before Macros is included."""
         xml1 = """<compiler><FFLAGS><append>-cake</append></FFLAGS></compiler>"""
         tester = self.xml_to_tester(xml1)
-        tester.assert_variable_equals("FFLAGS", "-delicious -cake", env={"FFLAGS": "-delicious"})
+        tester.assert_variable_equals("FFLAGS", "-delicious -cake", var={"FFLAGS": "-delicious"})
 
     def test_build_time_append_flags(self):
         """Test build_time selection of compiler flags."""
@@ -508,6 +586,22 @@ class TestMakeOutput(unittest.TestCase):
         with self.assertRaisesRegexp(MacroScriptError, err_msg) as asrt:
             self.xml_to_tester("<compiler>"+xml1+xml2+"</compiler>")
         shutil.rmtree(asrt.exception.temp_test_dir)
+
+
+class TestCMakeOutput(TestMakeOutput):
+
+    """CMake macros tests.
+
+    This class contains tests of the CMake output of MacrosMaker.
+
+    This class simply inherits all of the methods of TestMakeOutput, but changes
+    the definition of xml_to_tester to create a CMakeTester instead.
+    """
+
+    def xml_to_tester(self, xml_string):
+        """Helper that directly converts an XML string to a MakefileTester."""
+        test_xml = _wrap_config_build_xml(xml_string)
+        return CMakeTester(self, self._maker.make_macros(test_xml, "cmake"))
 
 
 if __name__ == "__main__":
