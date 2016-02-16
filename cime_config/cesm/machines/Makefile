@@ -76,38 +76,6 @@ ifndef MOD_SUFFIX
    MOD_SUFFIX := mod
 endif
 
-#===============================================================================
-# set CPP options (must use this before any flags or cflags settings)
-#===============================================================================
-
-CPPDEFS := $(USER_CPPDEFS) -D$(OS) 
-
-# Unless DEBUG mode is enabled, use NDEBUG to turn off assert statements.
-ifneq ($(strip $(DEBUG)),TRUE)
-   CPPDEFS += -DNDEBUG
-endif
-
-# USE_ESMF_LIB is currently only defined in env_build.xml
-ifeq ($(USE_ESMF_LIB), TRUE)
-   CPPDEFS += -DUSE_ESMF_LIB
-endif
-
-# ESMF_INTERFACE is currently only defined in env_build.xml
-ifeq ($(COMP_INTERFACE), ESMF)
-   CPPDEFS += -DESMF_INTERFACE
-else
-   CPPDEFS += -DMCT_INTERFACE
-endif
-
-ifeq ($(strip $(MPILIB)),mpi-serial)
-  CPPDEFS += -DNO_MPI2
-else
-  CPPDEFS += -DHAVE_MPI
-endif
-ifeq ($(compile_threaded), true)
-  CPPDEFS += -DTHREADED_OMP
-endif
-
 ifeq (,$(EXEROOT))
   EXEROOT = $(shell ./xmlquery EXEROOT -value)
 endif
@@ -133,6 +101,38 @@ endif
 
 ifeq (,$(SHAREDPATH))
   SHAREDPATH = $(SHAREDLIBROOT)/$(COMPILER)/$(MPILIB)/$(DEBUGDIR)/$(THREADDIR)
+endif
+
+#===============================================================================
+# set CPP options (must use this before any flags or cflags settings)
+#===============================================================================
+
+CPPDEFS := $(USER_CPPDEFS) -D$(OS) -DCPR$(shell echo $(COMPILER) | tr a-z A-z)
+
+# Unless DEBUG mode is enabled, use NDEBUG to turn off assert statements.
+ifneq ($(strip $(DEBUG)),TRUE)
+   CPPDEFS += -DNDEBUG
+endif
+
+# USE_ESMF_LIB is currently only defined in env_build.xml
+ifeq ($(USE_ESMF_LIB), TRUE)
+   CPPDEFS += -DUSE_ESMF_LIB
+endif
+
+# ESMF_INTERFACE is currently only defined in env_build.xml
+ifeq ($(COMP_INTERFACE), ESMF)
+   CPPDEFS += -DESMF_INTERFACE
+else
+   CPPDEFS += -DMCT_INTERFACE
+endif
+
+ifeq ($(strip $(MPILIB)),mpi-serial)
+  CPPDEFS += -DNO_MPI2
+else
+  CPPDEFS += -DHAVE_MPI
+endif
+ifeq ($(compile_threaded), true)
+  CPPDEFS += -DTHREADED_OMP
 endif
 
 include $(CASEROOT)/Macros
