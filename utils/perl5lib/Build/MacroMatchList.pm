@@ -69,6 +69,7 @@ sub append_match {
         # we should therefore replace with just the new value.
         $self->{"specificity"} = $specificity;
         $self->{"matches"} = [\%match];
+        $self->{"depends"} = $depends;
     }
     # If the new match is less specific, do nothing with it.
 }

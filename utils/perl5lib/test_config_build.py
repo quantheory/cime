@@ -625,6 +625,16 @@ class TestMakeOutput(unittest.TestCase):
             self.xml_to_tester("<compiler>"+xml1+xml2+"</compiler>")
         shutil.rmtree(asrt.exception.temp_test_dir)
 
+    def test_variable_insertion_with_machine_specific_setting(self):
+        """Test that machine-specific <var> dependencies are correct."""
+        xml1 = """<compiler><MPI_LIB_NAME>something</MPI_LIB_NAME></compiler>"""
+        xml2 = """<compiler MACH="{}"><MPI_LIB_NAME><var>MPI_PATH</var></MPI_LIB_NAME></compiler>""".format(self.test_machine)
+        xml3 = """<compiler><MPI_PATH><var>MPI_LIB_NAME</var></MPI_PATH></compiler>"""
+        err_msg = "MacroMaker was given XML output with a circular <var> reference"
+        with self.assertRaisesRegexp(MacroScriptError, err_msg) as asrt:
+            self.xml_to_tester(xml1+xml2+xml3)
+        shutil.rmtree(asrt.exception.temp_test_dir)
+
 
 @unittest.skipIf(NO_CMAKE, "CMake tests skipped at user request.")
 class TestCMakeOutput(TestMakeOutput):
