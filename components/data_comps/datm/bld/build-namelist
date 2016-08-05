@@ -148,7 +148,7 @@ def build_namelist(case, confdir, inst_string, infiles, definition_files,
     if datm_mode.startswith("CORE"):
         factorfn = "atm/datm7/CORE2/COREv2.correction_factors.T62.121007.nc"
         nmlgen.add_default("factorfn", os.path.join(din_loc_root, factorfn))
-    presaero = ".true." if datm_presaero == "none" else ".false."
+    presaero = ".false." if datm_presaero == "none" else ".true."
     nmlgen.add_default("presaero", value=presaero)
     # Should the following be in the namelist definitions file instead of here?
     nmlgen.add_default("decomp", "1d")
