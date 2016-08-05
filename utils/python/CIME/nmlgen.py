@@ -19,7 +19,7 @@ from CIME.utils import expect
 
 logger = logging.getLogger(__name__)
 
-_var_ref_re = re.compile(r"\$(\{)(?P<name>\w+)(?(1)\})")
+_var_ref_re = re.compile(r"\$(\{)?(?P<name>\w+)(?(1)\})")
 
 _ymd_re = re.compile(r"%(?P<digits>[1-9][0-9]*)?y(?P<month>m(?P<day>d)?)?")
 
@@ -138,6 +138,7 @@ class NamelistGenerator(object):
             if scalar is None:
                 value[i] = ""
             elif var_info['type'] == 'character':
+                expect(not isinstance(scalar, list), name)
                 value[i] = self.quote_string(scalar)
         return compress_literal_list(value)
 
@@ -229,7 +230,7 @@ class NamelistGenerator(object):
                 expect(env_val is not None,
                        "Namelist default for variable %s refers to unknown XML "
                        "variable %s." % (name, match.group('name')))
-                scalar = scalar.replace(match.group(0), env_val, count=1)
+                scalar = scalar.replace(match.group(0), str(env_val), 1)
                 match = _var_ref_re.search(scalar)
             default[i] = scalar
         # Deal with missing quotes.
@@ -239,6 +240,7 @@ class NamelistGenerator(object):
                 if scalar != '':
                     default[i] = self.quote_string(scalar)
         default = self._to_python_value(name, default)
+        return default
 
     def get_streams(self):
         """Get a list of all streams used for the current datm mode."""
@@ -332,9 +334,9 @@ class NamelistGenerator(object):
                 new_lines.append(line)
                 continue
             if match.group('digits'):
-                year_format = "%0"+match.group('digits')
+                year_format = "%0"+match.group('digits')+"d"
             else:
-                year_format = "%04"
+                year_format = "%04d"
             for year in range(year_start, year_end+1):
                 if match.group('day'):
                     for month in range(1, 13):
@@ -388,8 +390,8 @@ class NamelistGenerator(object):
         data_varnames = self._sub_fields(self.get_default("strm_datvar",
                                                           config))
         offset = self.get_default("strm_offset", config)
-        year_start = self.get_default("strm_year_start", config)
-        year_end = self.get_default("strm_year_end", config)
+        year_start = int(self.get_default("strm_year_start", config))
+        year_end = int(self.get_default("strm_year_end", config))
         data_filenames = self._sub_paths(data_filenames, year_start, year_end)
         domain_filenames = self._sub_paths(domain_filenames, year_start,
                                            year_end)
@@ -423,9 +425,9 @@ class NamelistGenerator(object):
             "config stream is %s, but input stream is %s" % \
             (config['stream'], stream)
         # Double-check the years for sanity.
-        year_start = self.get_default("strm_year_start", config)
-        year_end = self.get_default("strm_year_end", config)
-        year_align = self.get_default("strm_year_align", config)
+        year_start = int(self.get_default("strm_year_start", config))
+        year_end = int(self.get_default("strm_year_end", config))
+        year_align = int(self.get_default("strm_year_align", config))
         expect(year_end >= year_start,
                "Stream %s starts at year %d, but ends at earlier year %d." %
                (stream, year_start, year_end))
@@ -434,8 +436,11 @@ class NamelistGenerator(object):
                                          year_end)
         self._streams_namelists["streams"].append(stream_string)
         for variable in self._streams_variables:
-            default = self.get_default("strm_"+variable, config)
-            self._streams_namelists[variable].append(default)
+            default = self.get_default(variable, config)
+            expect(len(default) == 1,
+                   "Stream %s had multiple settings for variable %s." %
+                   (stream, variable))
+            self._streams_namelists[variable].append(default[0])
 
     def set_abs_file_path(self, file_path):
         """If `file_path` is relative, make it absolute using `DIN_LOC_ROOT`.
@@ -522,24 +527,26 @@ class NamelistGenerator(object):
                 if input_pathname is not None:
                     # This is where we end up for all variables that are paths
                     # to input data files.
-                    literal = self._namelist.get_variable_value(group_name,
-                                                                variable_name)
-                    file_path = character_literal_to_string(literal)
-                    if input_pathname == 'abs':
-                        # No further mangling needed for absolute paths.
-                        pass
-                    elif input_pathname.startswith('rel:'):
-                        # The part past "rel" is the name of a variable that
-                        # this variable specifies its path relative to.
-                        root_var = input_pathname[4:]
-                        root_dir = self.get_value(root_var)
-                        file_path = os.path.join(root_dir, file_path)
-                    else:
-                        expect(False,
-                               "Bad input_pathname value: %s." % input_pathname)
-                    # Write to the input data list.
-                    input_data_list.write("%s = %s\n" %
-                                          (variable_name, file_path))
+                    literals = self._namelist.get_variable_value(group_name,
+                                                                 variable_name)
+                    for literal in literals:
+                        file_path = character_literal_to_string(literal)
+                        if input_pathname == 'abs':
+                            # No further mangling needed for absolute paths.
+                            pass
+                        elif input_pathname.startswith('rel:'):
+                            # The part past "rel" is the name of a variable that
+                            # this variable specifies its path relative to.
+                            root_var = input_pathname[4:]
+                            root_dir = self.get_value(root_var)
+                            file_path = os.path.join(root_dir, file_path)
+                        else:
+                            expect(False,
+                                   "Bad input_pathname value: %s." %
+                                   input_pathname)
+                        # Write to the input data list.
+                        input_data_list.write("%s = %s\n" %
+                                              (variable_name, file_path))
 
     def write_output_files(self, namelist_file, modelio_file, data_list_path):
         """Write out the namelists and input data files.
