@@ -4,26 +4,6 @@
 
 <namelist_definition>
 
-<!-- =========================================  -->
-<!--- DATM env settings                         -->
-<!-- =========================================  -->
-
-<entry id="datm_mode"
-type="char*256"
-category="datm_setting"
-group="datm_env_settings" 
-valid_values="CLM_QIAN,CLM1PT,CLMCRUNCEP,CLMCRUNCEP_V5,CLMGSWP3,CPLHIST3HrWx,CORE2_NYF,CORE2_IAF,COPYALL_NPS_v1,COPYALL_CORE2_v1,WW3,NLDAS">
-Data Model mode to process forcing data
-</entry>
-
-<entry id="datm_presaero"
-type="char*256"
-category="datm_setting"
-group="datm_env_settings"
-valid_values="none,pt1_pt1,clim_2000,clim_1850,trans_1850-2000,rcp2.6,rcp4.5,rcp6.0,rcp8.5">
-Prescribed aerosol mode
-</entry>
-
 <!-- ========================================================================================  -->
 <!-- Stream file variables                                                                     -->
 <!-- ========================================================================================  -->
