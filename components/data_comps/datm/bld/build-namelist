@@ -86,10 +86,6 @@ def build_namelist(case, confdir, inst_string, infiles, definition_files,
     nmlgen = NamelistGenerator(case, infiles, definition_files, defaults_files,
                                config)
 
-    # Start adding values.
-    nmlgen.set_value("datm_mode", datm_mode)
-    nmlgen.set_value("datm_presaero", datm_presaero)
-
     # Construct the list of streams.
     streams = nmlgen.get_streams()
     if datm_presaero == "pt1_pt1":
@@ -127,9 +123,9 @@ def build_namelist(case, confdir, inst_string, infiles, definition_files,
         inst_stream = stream + inst_string
         logger.info("DATM stream is %s", inst_stream)
         stream_path = os.path.join(confdir,
-                                   "datm.streams.text." + inst_stream)
+                                   "datm.streams.txt." + inst_stream)
         user_stream_path = os.path.join(case.get_case_root(),
-                                        "user_datm.streams.text." + inst_stream)
+                                        "user_datm.streams.txt." + inst_stream)
         # Use the user's stream file, or create one if necessary.
         if os.path.exists(user_stream_path):
             shutil.copyfile(user_stream_path, stream_path)
